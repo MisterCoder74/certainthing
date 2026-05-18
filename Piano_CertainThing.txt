@@ -1,0 +1,614 @@
+# CertainThing — Detailed Build Plan
+> *An AI-powered vibe coder with multimodal input, website analysis, and a conversational + reasoning interface.*
+> Named in homage to SureThing.
+
+---
+
+## Table of Contents
+
+1. [Project Overview](#1-project-overview)
+2. [Core Features](#2-core-features)
+3. [Architecture Overview](#3-architecture-overview)
+4. [File & Folder Structure](#4-file--folder-structure)
+5. [UI/UX Design](#5-uiux-design)
+6. [Module Breakdown](#6-module-breakdown)
+   - 6.1 [Auth & Session](#61-auth--session)
+   - 6.2 [Chat Engine](#62-chat-engine)
+   - 6.3 [Reasoning Pane](#63-reasoning-pane)
+   - 6.4 [File & Image Handling](#64-file--image-handling)
+   - 6.5 [Website Analyzer](#65-website-analyzer)
+   - 6.6 [Code Output Renderer](#66-code-output-renderer)
+   - 6.7 [Prompt Engine (the brain)](#67-prompt-engine-the-brain)
+   - 6.8 [Session Persistence](#68-session-persistence)
+7. [API & External Dependencies](#7-api--external-dependencies)
+8. [Data Schemas](#8-data-schemas)
+9. [Build Phases & Timeline](#9-build-phases--timeline)
+10. [Known Challenges & Mitigations](#10-known-challenges--mitigations)
+11. [Future Expansions](#11-future-expansions)
+
+---
+
+## 1. Project Overview
+
+**CertainThing** is a browser-based AI coding assistant that lets users describe what they want to build — in plain language, via images, via file uploads, or via a website URL — and get working code back, iteratively, in a conversational interface.
+
+### Design philosophy
+- **Conversational-first**: The user never fills a form. Everything is a message.
+- **Transparent reasoning**: A live side pane shows what the AI is "thinking" before it writes code.
+- **Multimodal input**: Text, images, files, and URLs are all valid inputs.
+- **Iterative**: Every output is a starting point. The user can refine, extend, and request changes in natural conversation.
+- **Vanilla stack**: HTML + CSS + JS (frontend) + PHP (backend) + JSON (persistence). No framework. No build step.
+
+---
+
+## 2. Core Features
+
+| # | Feature | Description |
+|---|---------|-------------|
+| F1 | Chat interface | Conversational input with streaming AI responses |
+| F2 | Reasoning pane | Live trace of AI planning steps shown on the right |
+| F3 | Code renderer | Syntax-highlighted, tabbed, copyable code output |
+| F4 | Image understanding | User uploads an image → GPT-4o Vision analyzes it |
+| F5 | File understanding | User uploads .txt, .html, .css, .js, .php, .pdf → content injected as context |
+| F6 | Website analyzer | User pastes a URL → scraper fetches content → LLM uses it |
+| F7 | Iterative refinement | Follow-up messages refine previously generated code |
+| F8 | Session history | Conversations persist across page reloads (per-user JSON) |
+| F9 | Code export | Download generated code as a .zip or individual files |
+| F10 | App Deploy | Deploy all files to a per-user decicated folder |
+| F11 | Auth | Email/password login (bcrypt, users.json) — same as VivacityAI |
+
+
+## 2b. Implementation & Coding Rules
+
+- **Relative Paths**: The app root folder is NOT the hosting folder, thus all paths shall b relatie to the index.php and login.php files in certainthing/ folder. Use __DIR__ to detect the current folder.
+- **Cache-Busting for links**: Always add ?v=<?php echo time(); ?> to all .js and .css links
+- **Cache-Busting for JS fetches**: Always use cache: no-store for JS fetches
+- **Try/Catch & Feedbacks**: always wrap JS call in a try / catch structure; always provide a feedback for all operations to the user via a styled toast rather than a JS alert.
+- **Rules for toasts**: 
+-- The toast must be non-blocking and auto-dismiss after ~3.5 seconds.
+-- Fixed position, bottom-right or top-right of viewport.
+-- Distinct background colors per type: success (green tint), error (red tint), info (neutral).
+-- Fade-out transition before removal (opacity 0, ~500ms).
+-- Z-index high enough to appear above all other content (minimum 1100).
+- **PHP & JS Helper files**: Use dedicated, single-purpose helper files for cross-cutting functionalities like config, setup, sendmail, callOpenai
+- **File Satefy**: Every PHP script that reads or writes a file must check for existence first. JSON files always with FLOCK for concurrency safety
+- **Footers**: Always generate the year server-side: <?php echo date('Y'); ?>
+- **Responsivity**: Always provide responsivity for tablets (media query max 830px) and smartphone (media query max 430px) breakpoint
+
+---
+
+## 3. Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Browser (Frontend)                       │
+│                                                                 │
+│  ┌──────────────────────┐   ┌───────────────────────────────┐   │
+│  │   LEFT PANE — Chat   │   │  RIGHT PANE — Reasoning Trace │   │
+│  │                      │   │                               │   │
+│  │  [Message history]   │   │  [Thinking steps stream here] │   │
+│  │  [Input box]         │   │  [Status badges]              │   │
+│  │  [Attach btn]        │   │  [Tool call log]              │   │
+│  └──────────┬───────────┘   └──────────────────────────────-┘   │
+│             │  app.js (fetch + stream reader)                   │
+└─────────────┼───────────────────────────────────────────────────┘
+              │ HTTP (streaming)
+┌─────────────┴───────────────────────────────────────────────────┐
+│                        PHP Backend                              │
+│                                                                 │
+│  api/chat.php      ← main LLM streaming loop                    │
+│  api/upload.php    ← file/image ingestion                       │
+│  api/scrape.php    ← website fetcher + extractor                │
+│  api/export.php    ← zip download of generated files            │
+│  auth/             ← login, register, session                   │
+└─────────────────────────────────┬───────────────────────────────┘
+                                  │
+         ┌────────────────────────┼───────────────────┐
+         │                        │                   │
+  ┌──────┴──────┐    ┌────────────┴──────┐   ┌───-────┴──────┐
+  │ OpenAI API  │    │  data/ JSON files │   │  /tmp/ uploads│
+  │ GPT-4o      │    │  users.json       │   │  (ephemeral)  │
+  │ o4-mini     │    │  sessions/{id}    │   └──────────────-┘
+  └─────────────┘    └───────────────────┘
+```
+
+**Request lifecycle:**
+1. User types a message (+ optional image/file/URL) → `app.js` sends `FormData` to `api/chat.php`
+2. `chat.php` checks for attachments → calls `upload.php` or `scrape.php` as needed → builds context
+3. `chat.php` opens a streaming call to OpenAI → pipes back two SSE event types: `reasoning` and `content`
+4. `app.js` routes `reasoning` events to the right pane, `content` events to the chat left pane
+5. When the stream ends, `app.js` renders code blocks with syntax highlighting
+6. Session is saved to `data/sessions/{session_id}.json`
+
+---
+
+## 4. File & Folder Structure
+
+```
+certainthing/
+│
+├── index.php                  ← Main app shell (split-panel layout)
+├── login.php                  ← Auth pages
+├── register.php
+│
+├── api/
+│   ├── chat.php               ← Core: streaming LLM loop
+│   ├── upload.php             ← File/image handler
+│   ├── scrape.php             ← Website fetcher
+│   └── export.php             ← Code zip export
+│
+├── auth/
+│   ├── login_handler.php
+│   ├── register_handler.php
+│   └── logout.php
+│
+├── assets/
+│   ├── app.js                 ← All frontend logic (chat, streaming, rendering)
+│   ├── style.css              ← Split-panel layout + chat UI + code blocks
+│   └── highlight.min.js       ← Syntax highlighting (CDN or local)
+│
+├── data/
+│   ├── users.json             ← User accounts (bcrypt passwords)
+│   └── sessions/
+│       └── {session_id}.json  ← Per-user conversation history
+│
+├── prompts/
+│   └── system_prompt.txt      ← The master prompt that drives CertainThing's behavior
+│
+└── README.md
+```
+
+---
+
+## 5. UI/UX Design
+
+### Layout
+```
+┌────────────────────────────────────────────────────────────────┐
+│  CertainThing                              [User] [Logout]     │
+├───────────────────────────┬────────────────────────────────────┤
+│                           │                                    │
+│   CONVERSATION            │   REASONING / PROCESSING           │
+│                           │                                    │
+│  ┌─────────────────────┐  │  ✦ Understanding your request...   │
+│  │ AI: Here's the      │  │  ✦ Detected: landing page request  │
+│  │ HTML structure for  │  │  ✦ Fetching website reference...   │
+│  │ your landing page:  │  │  ✦ Planning: HTML → CSS → JS       │
+│  │                     │  │  ✦ Writing HTML skeleton...        │
+│  │ [CODE BLOCK]        │  │  ✦ Done. 3 files generated.        │
+│  └─────────────────────┘  │                                    │
+│                           │                                    │
+│  ┌─────────────────────┐  │                                    │
+│  │ [📎] [🌐] [Type...]  │   |                                   │
+│  │              [Send] │  │                                    │
+│  └─────────────────────┘  │                                    │
+└───────────────────────────┴────────────────────────────────────┘
+```
+
+### Key UI components
+- **Message bubbles**: User (right, accent color) / AI (left, neutral). Code blocks rendered inline.
+- **Reasoning trace**: Right pane. Each reasoning step prefixed by `✦`. Streams in real-time. Auto-scrolls. Fades older steps slightly.
+- **Attachment bar**: Below the input. Shows thumbnails/filenames of queued attachments before send.
+- **Code block**: Language badge, line numbers, "Copy" button, "Download file" button. Tabbed if multiple files.
+- **Status bar**: Top of reasoning pane. Shows `Thinking...` / `Scraping...` / `Generating...` / `Done`.
+
+### Responsive
+- On mobile: reasoning pane collapses behind a toggle button (`[ ⚙ Reasoning ]`).
+
+---
+
+## 6. Module Breakdown
+
+---
+
+### 6.1 Auth & Session
+
+**Files:** `login.php`, `register.php`, `auth/*.php`, `data/users.json`
+
+Identical to VivacityAI auth pattern:
+- `users.json` stores `{ id, email, password_hash, created_at }`
+- `bcrypt` via `password_hash()` / `password_verify()`
+- PHP `session_start()` sets `$_SESSION['user_id']`
+- All `api/*.php` files check session at the top and return `401` if not authenticated
+
+No changes needed from VivacityAI — copy the auth module directly.
+
+---
+
+### 6.2 Chat Engine
+
+**Files:** `api/chat.php`, `assets/app.js`
+
+**Backend (`chat.php`):**
+```
+1. Validate session
+2. Read POST body: { message, session_id, attachments[] }
+3. Load session history from data/sessions/{session_id}.json
+4. Process attachments (delegate to upload.php logic inline or via include)
+5. Build messages array: [system, ...history, new user message]
+6. Open streaming cURL request to OpenAI Chat Completions API
+7. Parse each SSE chunk:
+   - If chunk contains reasoning token → emit as: data: {"type":"reasoning","text":"..."}
+   - If chunk contains content token → emit as: data: {"type":"content","text":"..."}
+8. After stream ends: save updated history to session file
+```
+
+**Frontend (`app.js`):**
+```
+1. Intercept form submit
+2. Build FormData (message + files)
+3. fetch('api/chat.php', { method: 'POST', body: formData })
+4. Read response as a ReadableStream
+5. Parse each SSE line:
+   - type=reasoning → append to right pane
+   - type=content → append to left pane chat bubble
+6. After stream ends: call renderCodeBlocks() on the new bubble
+```
+
+**Streaming approach:**
+Use `text/event-stream` content type with `ob_flush()` / `flush()` in PHP. No WebSockets needed.
+
+---
+
+### 6.3 Reasoning Pane
+
+**Files:** `assets/app.js`, `assets/style.css`
+
+The reasoning pane is a passive receiver — it just displays whatever `type=reasoning` events arrive.
+
+**Two implementation options:**
+
+| Option | Approach | Effort |
+|--------|----------|--------|
+| **Simulated** (v1) | `chat.php` emits synthetic reasoning events based on what it detects in the user message (URL? → "Fetching website...", image? → "Analyzing image...") before calling OpenAI | 1 day |
+| **Real thinking tokens** (v2) | Use `o4-mini` with `reasoning_effort: "high"` — OpenAI returns actual thinking tokens; pipe them to the reasoning pane | 2 days |
+
+**Recommendation:** Start with simulated (v1) for reliability and speed. Add real tokens in phase 2.
+
+**Simulated reasoning events emitted by `chat.php`:**
+```
+✦ Reading your request...
+✦ Input detected: [text / image / file / URL]
+✦ [If URL] Fetching website content from {domain}...
+✦ [If image] Analyzing image with Vision API...
+✦ [If file] Reading {filename}...
+✦ Planning code structure...
+✦ Writing {HTML / CSS / JS / PHP}...
+✦ Reviewing output...
+✦ Done.
+```
+
+---
+
+### 6.4 File & Image Handling
+
+**Files:** `api/upload.php`, included in `chat.php`
+
+**Supported input types:**
+
+| Type | Extension | Processing |
+|------|-----------|------------|
+| Image | .jpg .png .gif .webp | Base64-encode → inject into OpenAI `image_url` message part |
+| Text / Code | .txt .html .css .js .php .json .md | Read raw → inject as text block in user message |
+| PDF | .pdf | Parse with `smalot/pdfparser` (Composer) → extract text → inject |
+| Other | — | Reject with friendly error message |
+
+**Image injection into OpenAI API:**
+```json
+{
+  "role": "user",
+  "content": [
+    { "type": "text", "text": "Create a landing page based on this design:" },
+    { "type": "image_url", "image_url": { "url": "data:image/png;base64,{BASE64}" } }
+  ]
+}
+```
+
+**File size limits:**
+- Images: max 5MB
+- Text files: max 500KB
+- PDFs: max 10MB
+
+**Security:**
+- Validate MIME type server-side (not just extension)
+- Store uploads in `/tmp/certainthing_{session_id}/` — ephemeral, not web-accessible
+- Delete after request completes
+
+---
+
+### 6.5 Website Analyzer
+
+**Files:** `api/scrape.php`
+
+**Flow:**
+```
+1. Receive URL from chat input (detected via regex: starts with http/https)
+2. Validate URL (filter_var FILTER_VALIDATE_URL)
+3. Fetch with cURL:
+   - Set realistic User-Agent
+   - Follow redirects (max 3)
+   - Timeout: 10 seconds
+4. Parse HTML with DOMDocument + DOMXPath:
+   - Remove <script>, <style>, <nav>, <footer>, <iframe> nodes
+   - Extract: <title>, <meta description>, all <h1-h3>, all <p>, <a> hrefs
+5. Truncate to ~8000 chars (fits in context window comfortably)
+6. Inject into user message as: "Website content from {url}:\n\n{extracted_text}"
+```
+
+**JS-heavy SPAs (limitation):**
+- cURL/DOMDocument won't work for React/Vue/Angular sites that render client-side
+- Detection: if extracted text is < 200 chars, flag it as a SPA
+- Fallback: return a warning message to the user: *"This site loads content via JavaScript. Try pasting the text/screenshot directly."*
+- Future: integrate Browserless API or Puppeteer for SPA support
+
+---
+
+### 6.6 Code Output Renderer
+
+**Files:** `assets/app.js`, `assets/style.css`, `highlight.min.js`
+
+**When the AI response contains a code block:**
+- Detect triple-backtick blocks with language hints (` ```html `, ` ```php `, etc.)
+- Render with `highlight.js` for syntax coloring
+- Add a **language badge** (top-left corner of block)
+- Add a **"Copy"** button (top-right)
+- Add a **"Download"** button that saves the block as a file (`index.html`, `style.css`, etc.)
+
+**Multi-file responses:**
+When the AI generates multiple files (e.g. HTML + CSS + JS), use **tabs**:
+```
+[ index.html ] [ style.css ] [ app.js ]
+```
+Each tab shows one code block. A **"Download All (.zip)"** button appears above the tabs, which calls `api/export.php`.
+
+**Export (`api/export.php`):**
+- Receives an array of `{ filename, content }` objects
+- Uses PHP's `ZipArchive` to create a zip in memory
+- Streams it back as `application/zip` download
+
+---
+
+### 6.7 Prompt Engine (the brain)
+
+**Files:** `prompts/system_prompt.txt`, `api/chat.php`
+
+This is the most important piece. The system prompt defines CertainThing's personality and behavior.
+
+**System prompt structure:**
+
+```
+IDENTITY
+You are CertainThing, an expert AI coding assistant. You help users build 
+web projects by generating clean, well-structured code in HTML, CSS, JavaScript, 
+and PHP. You use conversational, clear language and always explain what you built.
+
+BEHAVIOR RULES
+- Always ask one clarifying question if the request is ambiguous before generating code.
+- Generate complete, working code — never placeholders or "// add your logic here".
+- When generating multiple files, clearly separate them with filename headers.
+- After generating code, always offer one specific next step: "Want me to add X?"
+- If given an image: describe what you see, then generate code to replicate or 
+  extend the design.
+- If given website content: summarize the site's purpose first, then use it.
+- Keep reasoning concise. Code should speak for itself.
+
+OUTPUT FORMAT
+- Wrap each file in a triple-backtick block with the language and filename:
+  ```html [index.html]
+  ...
+  ```
+- After all code blocks, add a brief "What I built" summary (2-3 sentences max).
+- End with one concrete suggestion for what to build next.
+
+TECH STACK PREFERENCE
+Default to: vanilla HTML + CSS + JS. Use PHP only when server-side logic is 
+explicitly needed. No frameworks unless the user asks.
+```
+
+**Dynamic context injection (in `chat.php`):**
+Before the user message, inject detected context blocks:
+```
+[IMAGE ATTACHED: analyzing visual design]
+[FILE ATTACHED: style.css — 240 lines]
+[WEBSITE CONTENT from example.com: ...]
+```
+
+---
+
+### 6.8 Session Persistence
+
+**Files:** `data/sessions/{session_id}.json`
+
+**Schema:**
+```json
+{
+  "session_id": "abc123",
+  "user_id": "user_001",
+  "created_at": "2026-05-18T08:00:00",
+  "updated_at": "2026-05-18T08:30:00",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Build me a landing page for a coffee shop",
+      "timestamp": "2026-05-18T08:05:00",
+      "attachments": []
+    },
+    {
+      "role": "assistant",
+      "content": "Here's your landing page:\n```html [index.html]\n...",
+      "timestamp": "2026-05-18T08:05:08"
+    }
+  ]
+}
+```
+
+**Rules:**
+- One file per session (not per user — users can have multiple sessions)
+- Max 50 messages per session (older ones trimmed, keeping the system prompt context intact)
+- Session list shown in a sidebar or dropdown for returning to past projects
+
+---
+
+## 7. API & External Dependencies
+
+| Dependency | Purpose | Cost model |
+|------------|---------|------------|
+| **OpenAI GPT-4o** | Main LLM (text + vision) | Pay-per-token |
+| **OpenAI o4-mini** *(optional v2)* | Real thinking tokens for reasoning pane | Pay-per-token |
+| **highlight.js** | Syntax highlighting | Free, CDN |
+| **smalot/pdfparser** *(optional)* | PDF text extraction | Free, Composer |
+| **ZipArchive** (built-in PHP) | Code export | Free |
+| **GitHub API** | Repository reading, pulling, updating | Free |
+
+**No paid scraping API needed.** PHP cURL handles 80%+ of real websites.
+
+**OpenAI models used:**
+
+| Task | Model | Why |
+|------|-------|-----|
+| Text + code generation | `gpt-4o` | Best quality/speed balance |
+| Image analysis | `gpt-4o` | Vision built in |
+| Reasoning trace (v2) | `o4-mini` | Exposes thinking tokens, cheaper than o3 |
+
+---
+
+## 8. Data Schemas
+
+### `data/users.json`
+```json
+[
+  {
+    "id": "usr_abc123",
+    "email": "user@example.com",
+    "password_hash": "$2y$10$...",
+    "created_at": "2026-05-18T08:00:00",
+    "sessions": ["sess_001", "sess_002"],
+    "total_credits": 40000,
+    "used_credits": 500,
+  }
+]
+```
+
+### `data/sessions/{id}.json`
+See Section 6.8 above.
+
+### Attachment context object (in-memory, not persisted)
+```json
+{
+  "type": "image | file | url",
+  "filename": "mockup.png",
+  "content": "base64... or extracted text...",
+  "mime": "image/png"
+}
+```
+
+---
+
+## 9. Build Phases & Timeline
+
+### Phase 1 — Foundation *(3–4 days)*
+- [ ] Project scaffold (folder structure, index.php shell)
+- [ ] Auth module (copy from VivacityAI, adapt)
+- [ ] Split-panel layout (HTML/CSS — responsive)
+- [ ] Basic chat: textarea → `api/chat.php` → OpenAI stream → render in left pane
+- [ ] Session save/load (JSON)
+- [ ] Update README.md (per work rule)
+
+**Deliverable:** Working chat that streams GPT-4o responses with session persistence.
+
+---
+
+### Phase 2 — Reasoning Pane *(2 days)*
+- [ ] SSE dual-channel: `type=reasoning` vs `type=content`
+- [ ] Simulated reasoning events in `chat.php`
+- [ ] Right pane rendering + auto-scroll + fade animation
+- [ ] Status badge (Thinking / Scraping / Generating / Done)
+- [ ] Update README.md (per work rule)
+
+**Deliverable:** Split-panel experience with live reasoning trace.
+
+---
+
+### Phase 3 — Code Renderer *(2 days)*
+- [ ] Integrate highlight.js
+- [ ] Detect and parse code blocks from AI response
+- [ ] Language badge + Copy button + Download button
+- [ ] Multi-file tab view
+- [ ] `api/export.php` → ZipArchive download
+- [ ] Update README.md (per work rule)
+
+**Deliverable:** Beautiful, interactive code output with export.
+
+---
+
+### Phase 4 — Multimodal Input *(2–3 days)*
+- [ ] Attachment UI (paperclip button, preview chips)
+- [ ] `api/upload.php` (image + file handling)
+- [ ] Base64 image injection into OpenAI Vision API
+- [ ] Text file injection into context
+- [ ] PDF parsing (optional, via pdfparser)
+- [ ] Update README.md (per work rule)
+
+**Deliverable:** Users can attach images and files to their requests.
+
+---
+
+### Phase 5 — Website Analyzer *(2 days)*
+- [ ] URL detection in input (regex)
+- [ ] `api/scrape.php` (cURL + DOMDocument extraction)
+- [ ] SPA detection fallback
+- [ ] Reasoning event: "Fetching website from {domain}..."
+- [ ] Inject extracted content into LLM context
+- [ ] Update README.md (per work rule)
+
+**Deliverable:** Paste a URL → AI uses the website's content in code generation.
+
+---
+
+### Phase 6 — Polish & Integration *(2–3 days)*
+- [ ] Update README.md (per work rule)
+- [ ] Session list / history sidebar
+- [ ] Mobile responsive (reasoning pane toggle)
+- [ ] Error handling (API failures, scrape failures, oversized files)
+- [ ] Rate limiting (per user, per session)
+- [ ] System prompt tuning and testing
+- [ ] Update README.md (per work rule)
+
+**Deliverable:** Production-ready v1.0
+
+---
+
+### Total estimated timeline: **~2 weeks** (solo, part-time)
+
+---
+
+## 10. Known Challenges & Mitigations
+
+| Challenge | Risk | Mitigation |
+|-----------|------|------------|
+| PHP streaming (SSE) | Some shared hosts buffer output | Use `ob_implicit_flush(true)` + `ob_end_flush()` at start of `chat.php` |
+| JS-heavy SPAs fail to scrape | Medium (many modern sites) | Detect empty content → show user-friendly fallback message |
+| OpenAI context limit | Long conversations hit token ceiling | Trim history to last N messages; always keep system prompt |
+| PDF parsing quality | Tables, columns often garble | Warn user; suggest pasting text directly as alternative |
+| File path security | Path traversal attacks | Never use user input in file paths; generate random tmp filenames |
+| Relative paths | Assets break in subfolders | All paths relative to index.php (per your work rule) |
+
+---
+
+## 11. Future Expansions
+
+| Feature | Complexity | Notes |
+|---------|------------|-------|
+| Real thinking tokens (o4-mini) | Medium | Replace simulated reasoning with actual model reasoning |
+| SPA scraping via Browserless | Medium | Paid API, adds JS-rendered site support |
+| Code preview iframe | Medium | Render generated HTML/CSS/JS live in a sandboxed iframe |
+| Git export | Medium | Push generated code directly to a GitHub repo |
+| Template library | Low | Pre-built prompts for common projects (landing page, dashboard, form) |
+| Collaboration | High | Share a session URL with another user |
+| Plugin system | High | Allow CertainThing to call external APIs (weather, maps, etc.) |
+| VivacityAI integration | Low | Add CertainThing as a 4th tool in the VivacityAI Studio dashboard |
+
+---
+
+*Document version: 1.0 — Created 2026-05-18*
+*Author: Alessandro Demontis (CertainThing project)*
