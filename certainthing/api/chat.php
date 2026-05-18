@@ -14,13 +14,30 @@ send_event('status', 'Thinking');
 $user_id = $_SESSION['user_id'];
 $message = $_POST['message'] ?? '';
 $session_id = $_POST['session_id'] ?? 'default';
+$attachments = isset($_POST['attachments']) ? json_decode($_POST['attachments'], true) : [];
 
-if (empty($message)) {
+if (empty($message) && empty($attachments)) {
     send_event('error', 'Message is empty');
     exit;
 }
 
-// 1. Simulated Reasoning
+// 1. Process Attachments for LLM
+$processed_message = $message;
+$has_images = false;
+$image_attachments = [];
+
+if (!empty($attachments)) {
+    foreach ($attachments as $att) {
+        if ($att['is_image']) {
+            $has_images = true;
+            $image_attachments[] = $att['content']; // base64 data url
+        } else {
+            $processed_message .= "\n\n--- ATTACHED FILE: {$att['name']} ---\n" . $att['content'] . "\n--- END OF FILE ---";
+        }
+    }
+}
+
+// 2. Simulated Reasoning
 send_event('reasoning', 'Reading your request...');
 usleep(300000); // 0.3s
 
@@ -47,11 +64,52 @@ $messages = [
 
 // Add history
 foreach ($session_data['messages'] as $msg) {
-    $messages[] = ['role' => $msg['role'], 'content' => $msg['content']];
+    $role = $msg['role'];
+    $content = $msg['content'];
+    
+    if ($role === 'user' && !empty($msg['attachments'])) {
+        $has_img = false;
+        $processed = $content;
+        $imgs = [];
+        
+        foreach ($msg['attachments'] as $att) {
+            if ($att['is_image']) {
+                $has_img = true;
+                $imgs[] = $att['content'];
+            } else {
+                $processed .= "\n\n--- ATTACHED FILE: {$att['name']} ---\n" . $att['content'] . "\n--- END OF FILE ---";
+            }
+        }
+        
+        if ($has_img) {
+            $user_content = [['type' => 'text', 'text' => $processed]];
+            foreach ($imgs as $url) {
+                $user_content[] = ['type' => 'image_url', 'image_url' => ['url' => $url]];
+            }
+            $messages[] = ['role' => 'user', 'content' => $user_content];
+        } else {
+            $messages[] = ['role' => 'user', 'content' => $processed];
+        }
+    } else {
+        $messages[] = ['role' => $role, 'content' => $content];
+    }
 }
 
 // Add new message
-$messages[] = ['role' => 'user', 'content' => $message];
+if ($has_images) {
+    $user_content = [
+        ['type' => 'text', 'text' => $processed_message]
+    ];
+    foreach ($image_attachments as $img_url) {
+        $user_content[] = [
+            'type' => 'image_url',
+            'image_url' => ['url' => $img_url]
+        ];
+    }
+    $messages[] = ['role' => 'user', 'content' => $user_content];
+} else {
+    $messages[] = ['role' => 'user', 'content' => $processed_message];
+}
 
 send_event('reasoning', 'Planning code structure...');
 usleep(300000); // 0.3s
@@ -108,7 +166,12 @@ curl_exec($ch);
 curl_close($ch);
 
 // 5. Save Session
-$session_data['messages'][] = ['role' => 'user', 'content' => $message, 'timestamp' => date('c')];
+$session_data['messages'][] = [
+    'role' => 'user', 
+    'content' => $message, 
+    'attachments' => $attachments,
+    'timestamp' => date('c')
+];
 $session_data['messages'][] = ['role' => 'assistant', 'content' => $full_response, 'timestamp' => date('c')];
 $session_data['updated_at'] = date('c');
 

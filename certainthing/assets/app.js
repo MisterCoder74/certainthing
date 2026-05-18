@@ -9,12 +9,91 @@ document.addEventListener('DOMContentLoaded', () => {
     const reasoningContainer = document.getElementById('reasoning-container');
     const statusBadge = document.getElementById('status-badge');
     const newChatBtn = document.getElementById('new-chat-btn');
+    const attachBtn = document.getElementById('attach-btn');
+    const fileInput = document.getElementById('file-input');
+    const attachmentPreview = document.getElementById('attachment-preview');
     
     let currentSessionId = localStorage.getItem('certainthing_session_id') || 'sess_' + Date.now();
     localStorage.setItem('certainthing_session_id', currentSessionId);
 
+    let attachmentQueue = [];
+
     // Initial Load
     loadSession(currentSessionId);
+
+    // Attachments handling
+    attachBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async () => {
+        const files = Array.from(fileInput.files);
+        if (files.length === 0) return;
+
+        for (const file of files) {
+            await uploadFile(file);
+        }
+        fileInput.value = ''; // Reset for next selection
+    });
+
+    async function uploadFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('api/upload.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || 'Upload failed');
+            }
+
+            const data = await response.json();
+            addAttachmentToQueue(data);
+        } catch (err) {
+            console.error('Upload error', err);
+            showToast('Upload failed: ' + err.message, 'error');
+        }
+    }
+
+    function addAttachmentToQueue(attachment) {
+        attachmentQueue.push(attachment);
+        renderAttachmentChips();
+    }
+
+    function renderAttachmentChips() {
+        attachmentPreview.innerHTML = '';
+        attachmentQueue.forEach((att, index) => {
+            const chip = document.createElement('div');
+            chip.className = 'attachment-chip';
+            
+            if (att.is_image) {
+                const img = document.createElement('img');
+                img.src = att.content;
+                chip.appendChild(img);
+            } else {
+                const icon = document.createElement('span');
+                icon.textContent = '📄';
+                chip.appendChild(icon);
+            }
+
+            const name = document.createElement('span');
+            name.textContent = att.name;
+            chip.appendChild(name);
+
+            const removeBtn = document.createElement('span');
+            removeBtn.className = 'remove-btn';
+            removeBtn.textContent = '×';
+            removeBtn.onclick = () => {
+                attachmentQueue.splice(index, 1);
+                renderAttachmentChips();
+            };
+            chip.appendChild(removeBtn);
+
+            attachmentPreview.appendChild(chip);
+        });
+    }
 
     // Auto-resize textarea
     chatInput.addEventListener('input', () => {
@@ -25,13 +104,17 @@ document.addEventListener('DOMContentLoaded', () => {
     chatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const message = chatInput.value.trim();
-        if (!message) return;
+        if (!message && attachmentQueue.length === 0) return;
+
+        const attachments = [...attachmentQueue];
+        attachmentQueue = [];
+        renderAttachmentChips();
 
         chatInput.value = '';
         chatInput.style.height = 'auto';
         
-        appendMessage('user', message);
-        await sendMessage(message);
+        appendMessage('user', message, attachments);
+        await sendMessage(message, attachments);
     });
 
     newChatBtn.addEventListener('click', () => {
@@ -50,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.messages && data.messages.length > 0) {
                 messagesContainer.innerHTML = '';
                 data.messages.forEach(msg => {
-                    appendMessage(msg.role, msg.content);
+                    appendMessage(msg.role, msg.content, msg.attachments || []);
                 });
             }
         } catch (err) {
@@ -59,15 +142,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function appendMessage(role, text) {
+    function appendMessage(role, text, attachments = []) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${role}`;
         
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
         
-        // Simple Markdown-like formatting (newlines and code blocks)
-        bubble.innerHTML = formatText(text);
+        if (attachments && attachments.length > 0) {
+            const attContainer = document.createElement('div');
+            attContainer.className = 'message-attachments';
+            attachments.forEach(att => {
+                if (att.is_image) {
+                    const img = document.createElement('img');
+                    img.src = att.content;
+                    img.className = 'msg-image';
+                    attContainer.appendChild(img);
+                } else {
+                    const fileBox = document.createElement('div');
+                    fileBox.className = 'msg-file-box';
+                    fileBox.innerHTML = `📄 <strong>${att.name}</strong>`;
+                    attContainer.appendChild(fileBox);
+                }
+            });
+            bubble.appendChild(attContainer);
+        }
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'text-content';
+        textDiv.innerHTML = formatText(text);
+        bubble.appendChild(textDiv);
         
         msgDiv.appendChild(bubble);
         messagesContainer.appendChild(msgDiv);
@@ -317,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reasoningContainer.scrollTop = reasoningContainer.scrollHeight;
     }
 
-    async function sendMessage(message) {
+    async function sendMessage(message, attachments = []) {
         statusBadge.textContent = 'Thinking...';
         statusBadge.className = 'status-badge thinking';
         reasoningContainer.innerHTML = ''; // Clear for new request
@@ -325,6 +429,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData();
         formData.append('message', message);
         formData.append('session_id', currentSessionId);
+        if (attachments.length > 0) {
+            formData.append('attachments', JSON.stringify(attachments));
+        }
 
         try {
             const response = await fetch('api/chat.php', {
