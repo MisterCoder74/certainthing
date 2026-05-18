@@ -323,6 +323,11 @@ body, html {
     color: var(--reasoning-text);
     line-height: 1.4;
     animation: fadeIn 0.3s ease-out;
+    transition: opacity 0.3s ease;
+}
+
+.reasoning-step.is-old {
+    opacity: 0.5;
 }
 
 .reasoning-step::before {
@@ -347,9 +352,24 @@ body, html {
     color: var(--accent-color);
 }
 
+.status-badge.generating {
+    background-color: rgba(210, 153, 34, 0.2);
+    color: #d29922;
+}
+
 .status-badge.done {
     background-color: rgba(35, 134, 54, 0.2);
     color: var(--success-color);
+}
+
+.status-badge.error {
+    background-color: rgba(218, 54, 51, 0.2);
+    color: var(--error-color);
+}
+
+.status-badge.idle {
+    background-color: rgba(139, 148, 158, 0.2);
+    color: var(--reasoning-text);
 }
 
 /* Code Blocks */

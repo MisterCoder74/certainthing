@@ -93,6 +93,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function appendReasoning(text) {
+        // Mark existing steps as old
+        reasoningContainer.querySelectorAll('.reasoning-step').forEach(step => {
+            step.classList.add('is-old');
+        });
+
         const step = document.createElement('div');
         step.className = 'reasoning-step';
         step.textContent = text;
@@ -152,10 +157,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
                             } else if (data.type === 'status') {
                                 statusBadge.textContent = data.text;
-                                statusBadge.className = `status-badge ${data.text.toLowerCase()}`;
+                                const statusClass = data.text.toLowerCase().replace(/\./g, '').replace(/\s+/g, '-');
+                                statusBadge.className = `status-badge ${statusClass}`;
                             } else if (data.type === 'error') {
                                 showToast(data.text, 'error');
-                                appendReasoning('✦ Error: ' + data.text);
+                                appendReasoning('Error: ' + data.text);
                                 statusBadge.textContent = 'Error';
                                 statusBadge.className = 'status-badge error';
                             }

@@ -9,6 +9,8 @@ header('X-Accel-Buffering: no'); // For Nginx
 
 check_auth();
 
+send_event('status', 'Thinking');
+
 $user_id = $_SESSION['user_id'];
 $message = $_POST['message'] ?? '';
 $session_id = $_POST['session_id'] ?? 'default';
@@ -19,10 +21,11 @@ if (empty($message)) {
 }
 
 // 1. Simulated Reasoning
-send_event('reasoning', '✦ Reading your request...');
-usleep(500000); // 0.5s
+send_event('reasoning', 'Reading your request...');
+usleep(300000); // 0.3s
 
 // 2. Load/Create Session
+send_event('reasoning', 'Loading session history...');
 $session_file = SESSIONS_DIR . '/' . $user_id . '_' . $session_id . '.json';
 $session_data = safe_read_json($session_file);
 
@@ -36,6 +39,7 @@ if (empty($session_data)) {
 }
 
 // 3. Prepare Prompt
+send_event('reasoning', 'Preparing system prompt...');
 $system_prompt = file_get_contents(PROMPTS_DIR . '/system_prompt.txt');
 $messages = [
     ['role' => 'system', 'content' => $system_prompt]
@@ -49,7 +53,8 @@ foreach ($session_data['messages'] as $msg) {
 // Add new message
 $messages[] = ['role' => 'user', 'content' => $message];
 
-send_event('reasoning', '✦ Planning code structure...');
+send_event('reasoning', 'Planning code structure...');
+usleep(300000); // 0.3s
 
 // 4. OpenAI Request
 if (empty($openai_key)) {
@@ -57,6 +62,7 @@ if (empty($openai_key)) {
     exit;
 }
 
+send_event('reasoning', 'Connecting to OpenAI...');
 $ch = curl_init('https://api.openai.com/v1/chat/completions');
 
 $post_data = [
@@ -73,6 +79,7 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Authorization: Bearer ' . $openai_key
 ]);
 
+send_event('status', 'Generating');
 $full_response = '';
 
 // Callback for streaming
@@ -107,5 +114,5 @@ $session_data['updated_at'] = date('c');
 
 safe_write_json($session_file, $session_data);
 
-send_event('reasoning', '✦ Done.');
+send_event('reasoning', 'Done.');
 send_event('status', 'Done');
