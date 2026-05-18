@@ -242,6 +242,32 @@ body, html {
     word-wrap: break-word;
 }
 
+.message-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.msg-image {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 6px;
+    object-fit: contain;
+    border: 1px solid var(--border-color);
+}
+
+.msg-file-box {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background-color: rgba(0,0,0,0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
 .user .bubble {
     background-color: var(--user-bubble);
     color: white;
@@ -259,6 +285,43 @@ body, html {
 .input-area {
     padding: 1.5rem;
     border-top: 1px solid var(--border-color);
+}
+
+.attachment-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.attachment-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--pane-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: var(--text-color);
+}
+
+.attachment-chip img {
+    width: 24px;
+    height: 24px;
+    object-fit: cover;
+    border-radius: 3px;
+}
+
+.attachment-chip .remove-btn {
+    cursor: pointer;
+    color: var(--reasoning-text);
+    font-weight: bold;
+    padding: 0 0.2rem;
+}
+
+.attachment-chip .remove-btn:hover {
+    color: var(--error-color);
 }
 
 .input-wrapper {
@@ -538,6 +601,15 @@ code {
     .left-pane {
         width: 100%;
     }
+}
+
+.main-footer {
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--reasoning-text);
+    border-top: 1px solid var(--border-color);
+    background-color: var(--pane-bg);
 }
 
 footer {

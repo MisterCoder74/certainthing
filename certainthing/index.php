@@ -44,11 +44,13 @@ if (!isset($_SESSION['user_id'])) {
                     </div>
                 </div>
                 <div class="input-area">
+                    <div id="attachment-preview" class="attachment-preview"></div>
                     <form id="chat-form">
                         <div class="input-wrapper">
+                            <input type="file" id="file-input" multiple style="display: none;">
                             <textarea id="chat-input" placeholder="Describe what you want to build..." rows="1"></textarea>
                             <div class="input-actions">
-                                <button type="button" id="attach-btn" title="Attach file (Not implemented yet)">📎</button>
+                                <button type="button" id="attach-btn" title="Attach file">📎</button>
                                 <button type="submit" id="send-btn">Send</button>
                             </div>
                         </div>
@@ -70,6 +72,10 @@ if (!isset($_SESSION['user_id'])) {
 
         <!-- Toast Notifications -->
         <div id="toast-container"></div>
+
+        <footer class="main-footer">
+            &copy; <?php echo date('Y'); ?> CertainThing AI Assistant. All rights reserved.
+        </footer>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
