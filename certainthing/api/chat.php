@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/scrape.php';
 
 // Prevent output buffering
 header('Content-Type: text/event-stream');
@@ -15,6 +16,7 @@ $user_id = $_SESSION['user_id'];
 $message = $_POST['message'] ?? '';
 $session_id = $_POST['session_id'] ?? 'default';
 $attachments = isset($_POST['attachments']) ? json_decode($_POST['attachments'], true) : [];
+$urls = isset($_POST['urls']) ? json_decode($_POST['urls'], true) : [];
 
 if (empty($message) && empty($attachments)) {
     send_event('error', 'Message is empty');
@@ -33,6 +35,22 @@ if (!empty($attachments)) {
             $image_attachments[] = $att['content']; // base64 data url
         } else {
             $processed_message .= "\n\n--- ATTACHED FILE: {$att['name']} ---\n" . $att['content'] . "\n--- END OF FILE ---";
+        }
+    }
+}
+
+// 1b. Scrape URLs if provided
+if (!empty($urls)) {
+    foreach ($urls as $url) {
+        send_event('reasoning', "Fetching website: {$url}...");
+        $scrape_result = scrape_url($url);
+        if ($scrape_result['success']) {
+            $scraped_title = $scrape_result['title'];
+            $scraped_content = $scrape_result['content'];
+            $processed_message .= "\n\n--- WEBSITE CONTENT: {$scraped_title} ({$url}) ---\n{$scraped_content}\n--- END OF CONTENT ---";
+            send_event('reasoning', "Successfully fetched: {$url}");
+        } else {
+            send_event('reasoning', "Failed to fetch website: {$url} - " . $scrape_result['error']);
         }
     }
 }
