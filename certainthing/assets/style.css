@@ -372,18 +372,126 @@ body, html {
     color: var(--reasoning-text);
 }
 
-/* Code Blocks */
+/* Code Blocks & Tabs */
+.code-container {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-color);
+    overflow: hidden;
+}
+
+.code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background-color: var(--pane-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.code-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.language-badge {
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    background-color: var(--border-color);
+    color: var(--reasoning-text);
+}
+
+.code-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.code-action-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--reasoning-text);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.code-action-btn:hover {
+    background-color: var(--border-color);
+    color: var(--text-color);
+}
+
 pre {
+    margin: 0;
     background-color: #0d1117;
-    border-radius: 6px;
     padding: 1rem;
     overflow-x: auto;
-    margin: 1rem 0;
-    border: 1px solid var(--border-color);
+    border: none;
 }
 
 code {
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.9rem;
+}
+
+/* Tabs */
+.code-tabs {
+    display: flex;
+    background-color: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+    overflow-x: auto;
+}
+
+.code-tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border-right: 1px solid var(--border-color);
+    color: var(--reasoning-text);
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+}
+
+.code-tab.active {
+    background-color: var(--pane-bg);
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+}
+
+.code-pane {
+    display: none;
+}
+
+.code-pane.active {
+    display: block;
+}
+
+.zip-export-btn {
+    margin-top: 1rem;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem;
+    background-color: var(--pane-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.zip-export-btn:hover {
+    background-color: var(--border-color);
 }
 
 /* Toast */
