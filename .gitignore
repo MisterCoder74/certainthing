@@ -1,0 +1,4 @@
+certainthing/data/sessions/*.json
+certainthing/data/users.json
+.env
+*.log
