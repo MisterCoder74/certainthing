@@ -106,6 +106,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const message = chatInput.value.trim();
         if (!message && attachmentQueue.length === 0) return;
 
+        // Detect URLs in the message
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const urls = [];
+        let match;
+        while ((match = urlRegex.exec(message)) !== null) {
+            urls.push(match[1]);
+        }
+
         const attachments = [...attachmentQueue];
         attachmentQueue = [];
         renderAttachmentChips();
@@ -114,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatInput.style.height = 'auto';
         
         appendMessage('user', message, attachments);
-        await sendMessage(message, attachments);
+        await sendMessage(message, attachments, urls);
     });
 
     newChatBtn.addEventListener('click', () => {
@@ -421,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reasoningContainer.scrollTop = reasoningContainer.scrollHeight;
     }
 
-    async function sendMessage(message, attachments = []) {
+    async function sendMessage(message, attachments = [], urls = []) {
         statusBadge.textContent = 'Thinking...';
         statusBadge.className = 'status-badge thinking';
         reasoningContainer.innerHTML = ''; // Clear for new request
@@ -431,6 +439,9 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('session_id', currentSessionId);
         if (attachments.length > 0) {
             formData.append('attachments', JSON.stringify(attachments));
+        }
+        if (urls.length > 0) {
+            formData.append('urls', JSON.stringify(urls));
         }
 
         try {
