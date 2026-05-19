@@ -758,6 +758,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 downloadFile(fileName, code);
             });
         });
+
+        // Add Push to GitHub for single code blocks not in a group
+        bubble.querySelectorAll('.code-container:not(.multi-file) .code-actions').forEach(actions => {
+            if (actions.querySelector('.github-push-btn')) return; // Avoid duplicates
+
+            const githubBtn = document.createElement('button');
+            githubBtn.className = 'code-action-btn github-push-btn';
+            githubBtn.title = 'Push to GitHub';
+            githubBtn.textContent = 'GitHub';
+            githubBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const container = actions.closest('.code-container');
+                const code = container.querySelector('code').textContent;
+                const fileName = container.dataset.file || 'file.' + (container.dataset.lang || 'txt');
+                openGitHubModal([{ name: fileName, content: code }]);
+            });
+            actions.appendChild(githubBtn);
+        });
     }
 
     async function copyToClipboard(text) {
@@ -992,16 +1010,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // =============================================
     // Reasoning
     // =============================================
-    function appendReasoning(text) {
-        // Mark existing steps as old
-        reasoningContainer.querySelectorAll('.reasoning-step').forEach(step => {
-            step.classList.add('is-old');
-        });
+    function appendReasoning(text, isStreaming = false) {
+        let lastStep = reasoningContainer.lastElementChild;
+        
+        if (isStreaming && lastStep && lastStep.classList.contains('reasoning-step') && !lastStep.classList.contains('is-old')) {
+            lastStep.textContent += text;
+        } else {
+            // Mark existing steps as old if not streaming or if we want a new block
+            reasoningContainer.querySelectorAll('.reasoning-step').forEach(step => {
+                step.classList.add('is-old');
+            });
 
-        const step = document.createElement('div');
-        step.className = 'reasoning-step';
-        step.textContent = text;
-        reasoningContainer.appendChild(step);
+            const step = document.createElement('div');
+            step.className = 'reasoning-step';
+            step.textContent = text;
+            reasoningContainer.appendChild(step);
+        }
         reasoningContainer.scrollTop = reasoningContainer.scrollHeight;
     }
 
@@ -1051,7 +1075,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         try {
                             const data = JSON.parse(line.substring(6));
                             if (data.type === 'reasoning') {
-                                appendReasoning(data.text);
+                                appendReasoning(data.text, data.streaming || false);
                             } else if (data.type === 'content') {
                                 if (!assistantMessageDiv) {
                                     assistantMessageDiv = document.createElement('div');

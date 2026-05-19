@@ -4,6 +4,12 @@ AI-powered vibe coding assistant with multimodal input, website analysis, conver
 
 ## Current Status
 
+**Phase 7 — Advanced Features** implemented:
+- **Real Thinking Tokens**: Switched to `o3-mini` for true model-based reasoning streaming via `reasoning_content`.
+- **Live Preview Pane**: Tabbed interface to switch between reasoning trace and a live sandboxed iframe preview of the generated code.
+- **GitHub Integration**: One-click "Push to GitHub" to commit generated code directly to a user's repository.
+- **Enhanced Code Integrity**: Refined system prompts and streaming logic to ensure code completeness and valid structural tags.
+
 **Phase 6 — Polish & Integration** implemented:
 - **Session Sidebar**: List, switch, search, and delete past projects from a collapsible left sidebar.
 - **App Deploy (F10)**: Press F10 (or click 🚀 Deploy) to save generated code files to a live-viewable `deploy/` folder. Each deployment gets a unique URL to view the app running live.
