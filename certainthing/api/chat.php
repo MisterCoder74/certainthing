@@ -138,6 +138,7 @@ $post_data = [
     'model' => 'o3-mini', // Upgraded to o3-mini for real thinking tokens
     'messages' => $messages,
     'stream' => true,
+    'stream_options' => ['include_usage' => true],
     'max_completion_tokens' => 10000
 ];
 
@@ -163,6 +164,14 @@ curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $data) use (&$full_respons
             }
             $json = json_decode($json_str, true);
             
+            // Handle Usage
+            if (isset($json['usage'])) {
+                $usage = $json['usage'];
+                echo "data: " . json_encode(['type' => 'usage', 'usage' => $usage]) . "\n\n";
+                if (ob_get_level() > 0) ob_flush();
+                flush();
+            }
+
             // Handle Reasoning Content (Thinking Tokens)
             if (isset($json['choices'][0]['delta']['reasoning_content'])) {
                 $reasoning = $json['choices'][0]['delta']['reasoning_content'];
