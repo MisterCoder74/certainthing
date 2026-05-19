@@ -24,8 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const reasoningToggleHeader = document.getElementById('reasoning-toggle-header');
     const reasoningTogglePane = document.getElementById('reasoning-toggle-pane');
     const rightPane = document.getElementById('reasoning-pane');
-    const paneTabBtns = document.querySelectorAll('.pane-tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
     const previewIframe = document.getElementById('preview-iframe');
     const refreshPreviewBtn = document.getElementById('refresh-preview-btn');
     
@@ -76,22 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     reasoningTogglePane.addEventListener('click', () => {
         rightPane.classList.remove('show-reasoning');
-    });
-
-    // Pane Tabs
-    paneTabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tabId = btn.dataset.tab;
-            paneTabBtns.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
-            
-            btn.classList.add('active');
-            document.getElementById(`${tabId}-container`).classList.add('active');
-
-            if (tabId === 'preview') {
-                refreshPreview();
-            }
-        });
     });
 
     refreshPreviewBtn.addEventListener('click', () => {
