@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CertainThing Documentation</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --pane: #161b22;
+            --text: #c9d1d9;
+            --muted: #8b949e;
+            --accent: #58a6ff;
+            --border: #30363d;
+            --success: #238636;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 1.25rem;
+            border-right: 1px solid var(--border);
+            background: var(--pane);
+        }
+
+        .brand {
+            margin: 0 0 0.5rem;
+            font-size: 1.1rem;
+            color: var(--accent);
+        }
+
+        .subtitle {
+            margin: 0 0 1rem;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .toc {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 0.4rem;
+        }
+
+        .toc a {
+            display: block;
+            padding: 0.4rem 0.6rem;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: var(--text);
+        }
+
+        .toc a:hover {
+            border-color: var(--border);
+            background: rgba(88, 166, 255, 0.08);
+            text-decoration: none;
+        }
+
+        .main {
+            padding: 1.5rem;
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        .hero {
+            background: linear-gradient(180deg, rgba(88, 166, 255, 0.16), rgba(88, 166, 255, 0.03));
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        h1, h2, h3 {
+            margin-top: 0;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.6rem;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            margin: 1.6rem 0 0.8rem;
+            color: var(--accent);
+        }
+
+        h3 {
+            font-size: 1rem;
+            margin: 1.1rem 0 0.5rem;
+        }
+
+        p, li {
+            line-height: 1.55;
+        }
+
+        .card {
+            background: var(--pane);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin-top: 0.7rem;
+        }
+
+        .chip {
+            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 0.2rem 0.65rem;
+            color: var(--muted);
+            background: rgba(88, 166, 255, 0.08);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            border-radius: 8px;
+            background: var(--pane);
+            margin-bottom: 1rem;
+        }
+
+        th, td {
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            vertical-align: top;
+            padding: 0.55rem 0.65rem;
+            font-size: 0.92rem;
+        }
+
+        th {
+            color: var(--accent);
+            background: rgba(88, 166, 255, 0.08);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        code, pre {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        }
+
+        pre {
+            margin: 0 0 1rem;
+            background: #010409;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: auto;
+            padding: 0.9rem;
+            color: #c9d1d9;
+            font-size: 0.86rem;
+            line-height: 1.45;
+        }
+
+        .flow {
+            margin: 0;
+            padding-left: 1.15rem;
+        }
+
+        .flow li {
+            margin-bottom: 0.35rem;
+        }
+
+        .success {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        @media (max-width: 980px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <p class="brand">✦ CertainThing Docs</p>
+        <p class="subtitle">Phase 8 Documentation</p>
+        <ul class="toc">
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+            <li><a href="#structure">Project Structure</a></li>
+            <li><a href="#functions">Function Reference</a></li>
+            <li><a href="#use-cases">Use Cases</a></li>
+            <li><a href="#feature-flows">Feature Flows</a></li>
+            <li><a href="#workflow">Prompt → Deploy Workflow</a></li>
+        </ul>
+    </aside>
+
+    <main class="main">
+        <section id="overview" class="hero">
+            <h1>CertainThing Project Documentation</h1>
+            <p>
+                CertainThing is a PHP + vanilla JavaScript AI coding assistant with a split interface: chat on the left,
+                reasoning/preview on the right. It supports streaming responses, multimodal inputs, website analysis,
+                session persistence, ZIP export, one-key deploy, and GitHub push.
+            </p>
+            <div class="chips">
+                <span class="chip">Dark Theme: #0d1117</span>
+                <span class="chip">Accent: #58a6ff</span>
+                <span class="chip">SSE Streaming</span>
+                <span class="chip">Vanilla JS + PHP</span>
+            </div>
+        </section>
+
+        <section id="architecture">
+            <h2>Architecture Summary</h2>
+            <div class="card">
+                <ul>
+                    <li><strong>Frontend:</strong> single-page UI rendered in <code>certainthing/index.php</code> and powered by <code>assets/app.js</code>.</li>
+                    <li><strong>Backend:</strong> REST-style PHP endpoints in <code>certainthing/api/</code>.</li>
+                    <li><strong>Streaming:</strong> chat endpoint emits SSE events (<code>reasoning</code>, <code>content</code>, <code>status</code>, <code>usage</code>, <code>error</code>).</li>
+                    <li><strong>Persistence:</strong> JSON storage in <code>certainthing/data/</code> (users + per-session history).</li>
+                    <li><strong>Deploy model:</strong> generated files can be exported (ZIP), deployed to local web folder, or committed to GitHub.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="structure">
+            <h2>Project Structure Tree</h2>
+            <pre><code>/
+├── index.php
+├── README.md
+├── Piano_CertainThing.txt
+└── certainthing/
+    ├── doc.html
+    ├── index.php
+    ├── login.php
+    ├── register.php
+    ├── api/
+    │   ├── config.php
+    │   ├── chat.php
+    │   ├── upload.php
+    │   ├── scrape.php
+    │   ├── export.php
+    │   ├── deploy.php
+    │   ├── github_push.php
+    │   ├── get_sessions.php
+    │   ├── get_session.php
+    │   └── delete_session.php
+    ├── auth/
+    │   ├── login_handler.php
+    │   ├── register_handler.php
+    │   └── logout.php
+    ├── assets/
+    │   ├── app.js
+    │   └── style.css
+    ├── prompts/
+    │   └── system_prompt.txt
+    ├── data/            (runtime)
+    │   ├── users.json   (runtime)
+    │   └── sessions/    (runtime)
+    └── deploy/          (runtime output)</code></pre>
+
+            <h3>File Descriptions</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Path</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>/index.php</code></td><td>Root redirect to <code>certainthing/index.php</code>.</td></tr>
+                    <tr><td><code>/README.md</code></td><td>Project status, setup, and usage by phase.</td></tr>
+                    <tr><td><code>/Piano_CertainThing.txt</code></td><td>Original full planning document and phased build notes.</td></tr>
+                    <tr><td><code>certainthing/doc.html</code></td><td>This comprehensive technical + product documentation page.</td></tr>
+                    <tr><td><code>certainthing/index.php</code></td><td>Main authenticated app UI (chat, sessions sidebar, reasoning tab, live preview tab).</td></tr>
+                    <tr><td><code>certainthing/login.php</code></td><td>Login page UI.</td></tr>
+                    <tr><td><code>certainthing/register.php</code></td><td>Registration page UI.</td></tr>
+                    <tr><td><code>certainthing/assets/style.css</code></td><td>Complete dark theme styling and responsive layout definitions.</td></tr>
+                    <tr><td><code>certainthing/assets/app.js</code></td><td>All frontend logic: chat, SSE parse, code rendering, sessions, preview, deploy, GitHub modal.</td></tr>
+                    <tr><td><code>certainthing/prompts/system_prompt.txt</code></td><td>System/developer prompt rules used for model behavior and output format.</td></tr>
+                    <tr><td><code>certainthing/api/config.php</code></td><td>Shared constants, session bootstrap, auth checks, safe JSON helpers, SSE helper.</td></tr>
+                    <tr><td><code>certainthing/api/chat.php</code></td><td>Main streaming AI endpoint. Handles attachments, URL scrape context, history, OpenAI call, session save.</td></tr>
+                    <tr><td><code>certainthing/api/upload.php</code></td><td>Handles file/image uploads and returns standardized attachment payloads.</td></tr>
+                    <tr><td><code>certainthing/api/scrape.php</code></td><td>Website fetch and text extraction utility via cURL + DOM parsing.</td></tr>
+                    <tr><td><code>certainthing/api/export.php</code></td><td>Builds and streams ZIP archive of generated files.</td></tr>
+                    <tr><td><code>certainthing/api/deploy.php</code></td><td>Writes generated files to deploy folder and returns live view URL.</td></tr>
+                    <tr><td><code>certainthing/api/github_push.php</code></td><td>Uses GitHub API (tree/commit/ref flow) to push generated files.</td></tr>
+                    <tr><td><code>certainthing/api/get_sessions.php</code></td><td>Lists user sessions with metadata (title, dates, message count).</td></tr>
+                    <tr><td><code>certainthing/api/get_session.php</code></td><td>Returns one session JSON by <code>session_id</code>.</td></tr>
+                    <tr><td><code>certainthing/api/delete_session.php</code></td><td>Deletes session file and matching deploy folder.</td></tr>
+                    <tr><td><code>certainthing/auth/login_handler.php</code></td><td>Authenticates user credentials and sets session variables.</td></tr>
+                    <tr><td><code>certainthing/auth/register_handler.php</code></td><td>Creates user record with bcrypt hash and auto-login.</td></tr>
+                    <tr><td><code>certainthing/auth/logout.php</code></td><td>Destroys auth session and clears session cookie.</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="functions">
+            <h2>Function Reference (by file)</h2>
+
+            <h3><code>certainthing/api/config.php</code></h3>
+            <table>
+                <thead><tr><th>Function</th><th>Purpose</th></tr></thead>
+                <tbody>
+                <tr><td><code>send_event($type, $text)</code></td><td>Sends one SSE event packet to the frontend stream consumer.</td></tr>
+                <tr><td><code>check_auth()</code></td><td>Guards endpoints and exits with HTTP 401 JSON when user is not logged in.</td></tr>
+                <tr><td><code>safe_read_json($file)</code></td><td>Reads JSON file with shared lock and safe fallback.</td></tr>
+                <tr><td><code>safe_write_json($file, $data)</code></td><td>Writes JSON file with exclusive lock and directory auto-create.</td></tr>
+                </tbody>
+            </table>
+
+            <h3><code>certainthing/api/scrape.php</code></h3>
+            <table>
+                <thead><tr><th>Function</th><th>Purpose</th></tr></thead>
+                <tbody>
+                <tr><td><code>scrape_url($url)</code></td><td>Fetches URL, strips non-content nodes, extracts text/title, truncates for model context.</td></tr>
+                </tbody>
+            </table>
+
+            <h3><code>certainthing/api/github_push.php</code></h3>
+            <table>
+                <thead><tr><th>Function</th><th>Purpose</th></tr></thead>
+                <tbody>
+                <tr><td><code>github_api($url, $pat, $method = 'GET', $post_data = null)</code></td><td>Generic GitHub API wrapper for GET/POST/PATCH calls.</td></tr>
+                </tbody>
+            </table>
+
+            <h3><code>certainthing/assets/app.js</code></h3>
+            <table>
+                <thead><tr><th>Function</th><th>Purpose</th></tr></thead>
+                <tbody>
+                <tr><td><code>uploadFile(file)</code></td><td>Uploads selected file to <code>api/upload.php</code> and queues attachment.</td></tr>
+                <tr><td><code>addAttachmentToQueue(attachment)</code></td><td>Adds attachment to pending-send queue.</td></tr>
+                <tr><td><code>renderAttachmentChips()</code></td><td>Renders image/file chips with remove actions.</td></tr>
+                <tr><td><code>startNewChat()</code></td><td>Creates a new session id and resets message/reasoning panes.</td></tr>
+                <tr><td><code>fetchSessions()</code></td><td>Loads session list from backend.</td></tr>
+                <tr><td><code>renderSessions(sessions)</code></td><td>Draws session sidebar items with active state and delete buttons.</td></tr>
+                <tr><td><code>updateSessionCount()</code></td><td>Updates sidebar footer count text.</td></tr>
+                <tr><td><code>filterSessions(query)</code></td><td>Client-side filtering for session search.</td></tr>
+                <tr><td><code>switchSession(sessionId)</code></td><td>Loads selected session into UI and resets status.</td></tr>
+                <tr><td><code>deleteSession(sessionId)</code></td><td>Calls delete API and handles active-session fallback.</td></tr>
+                <tr><td><code>loadSession(sessionId)</code></td><td>Loads message history and re-renders messages.</td></tr>
+                <tr><td><code>deployLatestCode()</code></td><td>Extracts code files from latest assistant reply and deploys to server folder.</td></tr>
+                <tr><td><code>escapeHtml(text)</code></td><td>Escapes text to safe HTML output.</td></tr>
+                <tr><td><code>appendMessage(role, text, attachments)</code></td><td>Renders a chat bubble (including attachments + code highlighting).</td></tr>
+                <tr><td><code>formatText(text)</code></td><td>Converts markdown-like fenced blocks into structured code containers.</td></tr>
+                <tr><td><code>sanitizeHtml(html)</code></td><td>Sanitizes formatted content via DOMParser and script removal.</td></tr>
+                <tr><td><code>finalizeAssistantMessage(bubble)</code></td><td>Builds multi-file tabs, wires copy/download/export/GitHub actions.</td></tr>
+                <tr><td><code>copyToClipboard(text)</code></td><td>Clipboard helper with error handling.</td></tr>
+                <tr><td><code>downloadFile(name, content)</code></td><td>Downloads one generated file from browser memory.</td></tr>
+                <tr><td><code>exportAsZip(files)</code></td><td>Requests ZIP export endpoint and triggers browser download.</td></tr>
+                <tr><td><code>openGitHubModal(files)</code></td><td>Opens GitHub push modal and submits commit payload.</td></tr>
+                <tr><td><code>refreshPreview()</code></td><td>Builds iframe <code>srcdoc</code> by inlining generated HTML/CSS/JS files.</td></tr>
+                <tr><td><code>appendReasoning(text, isStreaming = false)</code></td><td>Streams reasoning text with old/new step visual state.</td></tr>
+                <tr><td><code>sendMessage(message, attachments, urls)</code></td><td>Handles SSE chat request lifecycle and live UI updates.</td></tr>
+                <tr><td><code>showToast(message, type = 'info')</code></td><td>Transient status/error notifications.</td></tr>
+                </tbody>
+            </table>
+
+            <div class="card">
+                <p><strong>Note:</strong> Other PHP files (<code>chat.php</code>, <code>upload.php</code>, <code>deploy.php</code>, auth handlers, etc.) are endpoint scripts executed procedurally.</p>
+            </div>
+        </section>
+
+        <section id="use-cases">
+            <h2>Primary Use Cases</h2>
+            <div class="card">
+                <h3>1) Build a project from scratch</h3>
+                <p>User describes desired app; AI streams reasoning and complete multi-file code; user previews, iterates, exports/deploys.</p>
+            </div>
+            <div class="card">
+                <h3>2) Analyze and clone a website</h3>
+                <p>User pastes URL; scraper fetches content; AI summarizes structure and generates an inspired/replicated implementation.</p>
+            </div>
+            <div class="card">
+                <h3>3) Generate UI from design image</h3>
+                <p>User uploads JPG/PNG/WebP screenshot; AI infers layout/style and produces matching frontend code.</p>
+            </div>
+            <div class="card">
+                <h3>4) Refactor existing codebase snippets</h3>
+                <p>User uploads source files (HTML/CSS/JS/PHP/etc.); AI edits or extends existing code while keeping context.</p>
+            </div>
+            <div class="card">
+                <h3>5) Ship output quickly</h3>
+                <p>Generated code can be downloaded as ZIP, deployed live by pressing <code>F10</code>, or pushed directly to GitHub.</p>
+            </div>
+        </section>
+
+        <section id="feature-flows">
+            <h2>Use Flows by Feature</h2>
+
+            <div class="card">
+                <h3>F1 — Conversational Chat + Streaming</h3>
+                <ol class="flow">
+                    <li>User submits prompt (optional attachments/URLs).</li>
+                    <li>Frontend posts <code>FormData</code> to <code>api/chat.php</code>.</li>
+                    <li>Backend builds prompt + history, calls OpenAI with streaming enabled.</li>
+                    <li>SSE events stream into UI; assistant bubble is built incrementally.</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>F2 — Reasoning Trace Pane</h3>
+                <ol class="flow">
+                    <li><code>chat.php</code> emits <code>reasoning</code> events for loading, scraping, and model reasoning deltas.</li>
+                    <li><code>appendReasoning()</code> updates current step in real time.</li>
+                    <li>Status badge moves through <em>Thinking → Generating → Done</em>.</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>F3 — Code Renderer + Multi-file Tabs + ZIP Export</h3>
+                <ol class="flow">
+                    <li>Assistant response is parsed for fenced code blocks.</li>
+                    <li><code>finalizeAssistantMessage()</code> groups adjacent blocks into tabbed multi-file UI.</li>
+                    <li>Per-file actions: copy, download; grouped actions: ZIP export, GitHub push.</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>F4/F5 — Image & File Understanding</h3>
+                <ol class="flow">
+                    <li>User selects files in attachment picker.</li>
+                    <li><code>upload.php</code> converts images to data URLs or reads text content.</li>
+                    <li>Attachment payload is appended to message and included in model context.</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>F6 — Website Analyzer</h3>
+                <ol class="flow">
+                    <li>URL regex detects links in prompt text.</li>
+                    <li><code>chat.php</code> calls <code>scrape_url()</code> for each URL.</li>
+                    <li>Sanitized website text is injected into prompt context before model request.</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>F7/F8 — Iteration + Session Persistence</h3>
+                <ol class="flow">
+                    <li>Each turn is appended to session JSON file <code>{user}_{session}.json</code>.</li>
+                    <li>Sidebar loads sessions via <code>get_sessions.php</code>.</li>
+                    <li>User can switch/search/delete sessions without leaving app.</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>F9 — Export as ZIP</h3>
+                <ol class="flow">
+                    <li>Frontend posts extracted files to <code>export.php</code>.</li>
+                    <li>Backend creates temp ZIP and streams it as attachment download.</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>F10 — Deploy (F10 / button)</h3>
+                <ol class="flow">
+                    <li>Frontend extracts last assistant code blocks and deduplicates names.</li>
+                    <li><code>deploy.php</code> writes files to <code>deploy/{user}/{session}</code>.</li>
+                    <li>UI shows live URL card; user opens deployed app in new tab.</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>F11 — Email/Password Auth</h3>
+                <ol class="flow">
+                    <li>Register stores bcrypt hash in <code>users.json</code>.</li>
+                    <li>Login validates via <code>password_verify()</code> and sets PHP session.</li>
+                    <li>Protected APIs call <code>check_auth()</code> before processing.</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Phase 7 Extension — Live Preview + GitHub Push</h3>
+                <ol class="flow">
+                    <li>Preview tab composes in-memory files and injects CSS/JS into HTML <code>srcdoc</code>.</li>
+                    <li>GitHub modal collects repo, PAT, branch, message and posts to <code>github_push.php</code>.</li>
+                    <li>Backend creates tree → commit → ref update and returns commit URL.</li>
+                </ol>
+            </div>
+        </section>
+
+        <section id="workflow">
+            <h2>Typical Workflow: Prompt to Deploy (Landing Page Example)</h2>
+            <div class="card">
+                <h3>Scenario</h3>
+                <p>User prompt: <em>"Build a modern SaaS landing page with hero, pricing cards, FAQ, and contact form."</em></p>
+                <ol class="flow">
+                    <li><strong>Prompt Input:</strong> User submits request in chat box.</li>
+                    <li><strong>Reasoning Phase:</strong> Right pane shows model planning and generation status in real time.</li>
+                    <li><strong>Code Generation:</strong> Assistant streams one or multiple files (e.g. <code>index.html</code>, <code>style.css</code>, <code>script.js</code>).</li>
+                    <li><strong>Code Interaction:</strong> User reviews tabs, copies snippets, or downloads individual files.</li>
+                    <li><strong>Live Preview:</strong> User opens Preview tab to validate layout, interactions, and responsive feel.</li>
+                    <li><strong>Iteration:</strong> User asks follow-up changes ("make it minimal", "add testimonials", "change palette").</li>
+                    <li><strong>Deploy:</strong> User presses <code>F10</code> or clicks <strong>🚀 Deploy</strong>.</li>
+                    <li><strong>Live URL:</strong> Backend returns <code>/deploy/{user}/{session}</code> link for immediate browser access.</li>
+                    <li><strong>Optional Publish:</strong> User pushes same files to GitHub from the generated code action.</li>
+                </ol>
+                <p class="success">Result: fast loop from idea → generated code → preview → live deployment in one workspace.</p>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>
