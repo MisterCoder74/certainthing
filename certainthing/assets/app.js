@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const reasoningToggleHeader = document.getElementById('reasoning-toggle-header');
     const reasoningTogglePane = document.getElementById('reasoning-toggle-pane');
     const rightPane = document.getElementById('reasoning-pane');
-    const tokenUsageDisplay = document.getElementById('token-usage');
     const paneTabBtns = document.querySelectorAll('.pane-tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     const previewIframe = document.getElementById('preview-iframe');
@@ -236,12 +235,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // =============================================
     // New Chat
     // =============================================
-    function startNewChat() {
-        currentSessionId = 'sess_' + Date.now();
+    async function startNewChat() {
+        const newSessionId = 'sess_' + Date.now();
+        currentSessionId = newSessionId;
         localStorage.setItem('certainthing_session_id', currentSessionId);
         messagesContainer.innerHTML = '';
         reasoningContainer.innerHTML = '';
         appendMessage('assistant', "New session started! How can I help?");
+        
+        // Create placeholder session file so it appears in sidebar immediately
+        try {
+            await fetch('api/create_session.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: newSessionId })
+            });
+        } catch (err) {
+            console.error('Failed to create session placeholder', err);
+        }
+        
         showToast('New session started', 'info');
         fetchSessions();
     }
@@ -1063,10 +1075,6 @@ document.addEventListener('DOMContentLoaded', () => {
         statusBadge.textContent = 'Thinking...';
         statusBadge.className = 'status-badge thinking';
         reasoningContainer.innerHTML = '';
-        if (tokenUsageDisplay) {
-            tokenUsageDisplay.style.display = 'none';
-            tokenUsageDisplay.textContent = '';
-        }
 
         const formData = new FormData();
         formData.append('message', message);
@@ -1149,13 +1157,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             const statusClass = data.text.toLowerCase().replace(/\./g, '').replace(/\s+/g, '-');
                             statusBadge.className = `status-badge ${statusClass}`;
                         } else if (data.type === 'usage') {
-                            if (tokenUsageDisplay && data.usage) {
+                            if (data.usage) {
                                 const total = data.usage.total_tokens || 0;
                                 const used = data.usage.completion_tokens || 0;
                                 const prompt = data.usage.prompt_tokens || 0;
-                                // o3-mini has 100k+ limit, but we can just show used/total if we want or just the counts
-                                tokenUsageDisplay.textContent = `Tokens: ${total.toLocaleString()} (P: ${prompt.toLocaleString()}, C: ${used.toLocaleString()})`;
-                                tokenUsageDisplay.style.display = 'block';
+                                appendReasoning(`Done. Tokens used: ${total.toLocaleString()} (P: ${prompt.toLocaleString()}, C: ${used.toLocaleString()})`);
                             }
                         } else if (data.type === 'error') {
                             showToast(data.text, 'error');
