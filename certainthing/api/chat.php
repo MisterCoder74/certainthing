@@ -152,18 +152,32 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
 
 send_event('status', 'Generating');
 $full_response = '';
+$buffer = '';
+$json_buffer = '';
 
 // Callback for streaming
-curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $data) use (&$full_response) {
-    $lines = explode("\n", $data);
-    foreach ($lines as $line) {
-        if (strpos($line, 'data: ') === 0) {
-            $json_str = substr($line, 6);
-            if ($json_str === '[DONE]') {
-                break;
-            }
-            $json = json_decode($json_str, true);
-            
+curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $data) use (&$full_response, &$buffer, &$json_buffer) {
+    $buffer .= $data;
+    while (($pos = strpos($buffer, "\n")) !== false) {
+        $line = substr($buffer, 0, $pos);
+        $buffer = substr($buffer, $pos + 1);
+        $line = trim($line);
+
+        if (empty($line)) continue;
+        if (strpos($line, 'data: ') !== 0) continue;
+
+        $json_str = substr($line, 6);
+        if ($json_str === '[DONE]') {
+            $json_buffer = '';
+            continue;
+        }
+
+        $json_buffer .= $json_str;
+        $json = json_decode($json_buffer, true);
+
+        if ($json !== null && json_last_error() === JSON_ERROR_NONE) {
+            $json_buffer = ''; // Success, clear for next event
+
             // Handle Usage
             if (isset($json['usage'])) {
                 $usage = $json['usage'];

@@ -1093,65 +1093,78 @@ document.addEventListener('DOMContentLoaded', () => {
             let assistantMessageDiv = null;
             let assistantBubble = null;
             let fullText = '';
+            let streamBuffer = '';
+            let jsonBuffer = '';
 
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
 
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split('\n');
+                streamBuffer += decoder.decode(value, { stream: true });
+                const lines = streamBuffer.split('\n');
+                streamBuffer = lines.pop();
                 
                 for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const data = JSON.parse(line.substring(6));
-                            if (data.type === 'reasoning') {
-                                appendReasoning(data.text, data.streaming || false);
-                            } else if (data.type === 'content') {
-                                if (!assistantMessageDiv) {
-                                    assistantMessageDiv = document.createElement('div');
-                                    assistantMessageDiv.className = 'message assistant';
-                                    assistantBubble = document.createElement('div');
-                                    assistantBubble.className = 'bubble';
-                                    assistantMessageDiv.appendChild(assistantBubble);
-                                    messagesContainer.appendChild(assistantMessageDiv);
-                                }
-                                fullText += data.text;
-                                assistantBubble.innerHTML = formatText(fullText);
-                                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                                
-                                // During streaming, highlight new blocks but don't tabify yet
-                                assistantBubble.querySelectorAll('pre code').forEach((block) => {
-                                    if (!block.classList.contains('hljs')) {
-                                        try {
-                                            hljs.highlightElement(block);
-                                        } catch (e) {
-                                            // Ignore highlight errors during streaming
-                                        }
-                                    }
-                                });
-                            } else if (data.type === 'status') {
-                                statusBadge.textContent = data.text;
-                                const statusClass = data.text.toLowerCase().replace(/\./g, '').replace(/\s+/g, '-');
-                                statusBadge.className = `status-badge ${statusClass}`;
-                            } else if (data.type === 'usage') {
-                                if (tokenUsageDisplay && data.usage) {
-                                    const total = data.usage.total_tokens || 0;
-                                    const used = data.usage.completion_tokens || 0;
-                                    const prompt = data.usage.prompt_tokens || 0;
-                                    // o3-mini has 100k+ limit, but we can just show used/total if we want or just the counts
-                                    tokenUsageDisplay.textContent = `Tokens: ${total.toLocaleString()} (P: ${prompt.toLocaleString()}, C: ${used.toLocaleString()})`;
-                                    tokenUsageDisplay.style.display = 'block';
-                                }
-                            } else if (data.type === 'error') {
-                                showToast(data.text, 'error');
-                                appendReasoning('Error: ' + data.text);
-                                statusBadge.textContent = 'Error';
-                                statusBadge.className = 'status-badge error';
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
+
+                    const content = trimmedLine.substring(6);
+                    if (content === '[DONE]') {
+                        jsonBuffer = '';
+                        continue;
+                    }
+
+                    jsonBuffer += content;
+                    try {
+                        const data = JSON.parse(jsonBuffer);
+                        jsonBuffer = ''; // Reset on success
+
+                        if (data.type === 'reasoning') {
+                            appendReasoning(data.text, data.streaming || false);
+                        } else if (data.type === 'content') {
+                            if (!assistantMessageDiv) {
+                                assistantMessageDiv = document.createElement('div');
+                                assistantMessageDiv.className = 'message assistant';
+                                assistantBubble = document.createElement('div');
+                                assistantBubble.className = 'bubble';
+                                assistantMessageDiv.appendChild(assistantBubble);
+                                messagesContainer.appendChild(assistantMessageDiv);
                             }
-                        } catch (e) {
-                            // Incomplete JSON chunk or other error - silently ignore
+                            fullText += data.text;
+                            assistantBubble.innerHTML = formatText(fullText);
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                            
+                            // During streaming, highlight new blocks but don't tabify yet
+                            assistantBubble.querySelectorAll('pre code').forEach((block) => {
+                                if (!block.classList.contains('hljs')) {
+                                    try {
+                                        hljs.highlightElement(block);
+                                    } catch (e) {
+                                        // Ignore highlight errors during streaming
+                                    }
+                                }
+                            });
+                        } else if (data.type === 'status') {
+                            statusBadge.textContent = data.text;
+                            const statusClass = data.text.toLowerCase().replace(/\./g, '').replace(/\s+/g, '-');
+                            statusBadge.className = `status-badge ${statusClass}`;
+                        } else if (data.type === 'usage') {
+                            if (tokenUsageDisplay && data.usage) {
+                                const total = data.usage.total_tokens || 0;
+                                const used = data.usage.completion_tokens || 0;
+                                const prompt = data.usage.prompt_tokens || 0;
+                                // o3-mini has 100k+ limit, but we can just show used/total if we want or just the counts
+                                tokenUsageDisplay.textContent = `Tokens: ${total.toLocaleString()} (P: ${prompt.toLocaleString()}, C: ${used.toLocaleString()})`;
+                                tokenUsageDisplay.style.display = 'block';
+                            }
+                        } else if (data.type === 'error') {
+                            showToast(data.text, 'error');
+                            appendReasoning('Error: ' + data.text);
+                            statusBadge.textContent = 'Error';
+                            statusBadge.className = 'status-badge error';
                         }
+                    } catch (e) {
+                        // Incomplete JSON chunk or other error - keep buffering
                     }
                 }
             }
