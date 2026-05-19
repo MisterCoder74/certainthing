@@ -55,10 +55,6 @@ if (!empty($urls)) {
     }
 }
 
-// 2. Simulated Reasoning
-send_event('reasoning', 'Reading your request...');
-usleep(300000); // 0.3s
-
 // 2. Load/Create Session
 send_event('reasoning', 'Loading session history...');
 $session_file = SESSIONS_DIR . '/' . $user_id . '_' . $session_id . '.json';
@@ -77,7 +73,7 @@ if (empty($session_data)) {
 send_event('reasoning', 'Preparing system prompt...');
 $system_prompt = file_get_contents(PROMPTS_DIR . '/system_prompt.txt');
 $messages = [
-    ['role' => 'system', 'content' => $system_prompt]
+    ['role' => 'developer', 'content' => $system_prompt]
 ];
 
 // Add history
@@ -129,9 +125,6 @@ if ($has_images) {
     $messages[] = ['role' => 'user', 'content' => $processed_message];
 }
 
-send_event('reasoning', 'Planning code structure...');
-usleep(300000); // 0.3s
-
 // 4. OpenAI Request
 if (empty($openai_key)) {
     send_event('error', 'OpenAI API key not configured');
@@ -142,10 +135,10 @@ send_event('reasoning', 'Connecting to OpenAI...');
 $ch = curl_init('https://api.openai.com/v1/chat/completions');
 
 $post_data = [
-    'model' => 'o1-mini', // Upgraded to o1-mini for real thinking tokens (referred as o4-mini in plan)
+    'model' => 'o3-mini', // Upgraded to o3-mini for real thinking tokens
     'messages' => $messages,
     'stream' => true,
-    'max_completion_tokens' => 5000
+    'max_completion_tokens' => 10000
 ];
 
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -173,7 +166,7 @@ curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $data) use (&$full_respons
             // Handle Reasoning Content (Thinking Tokens)
             if (isset($json['choices'][0]['delta']['reasoning_content'])) {
                 $reasoning = $json['choices'][0]['delta']['reasoning_content'];
-                echo "data: " . json_encode(['type' => 'reasoning', 'text' => $reasoning]) . "\n\n";
+                echo "data: " . json_encode(['type' => 'reasoning', 'text' => $reasoning, 'streaming' => true]) . "\n\n";
                 if (ob_get_level() > 0) ob_flush();
                 flush();
             }
