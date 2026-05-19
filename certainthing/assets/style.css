@@ -423,7 +423,7 @@ body, html {
 
 /* Reasoning Pane */
 .reasoning-container {
-    flex: 1;
+    max-height: 300px;
     overflow-y: auto;
     padding: 1rem;
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;

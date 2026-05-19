@@ -95,7 +95,6 @@ if (!isset($_SESSION['user_id'])) {
                             <button class="pane-tab-btn" data-tab="preview">Live Preview</button>
                         </div>
                         <div class="pane-header-actions">
-                            <div id="token-usage" class="token-usage" style="font-size: 0.75rem; color: var(--reasoning-text); margin-right: 0.5rem; display: none;"></div>
                             <div id="status-badge" class="status-badge idle">Idle</div>
                             <button id="reasoning-toggle-pane" class="btn-small" title="Close reasoning pane">✕</button>
                         </div>
