@@ -432,6 +432,7 @@ body, html {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .reasoning-step {
@@ -489,9 +490,11 @@ body, html {
 
 /* Preview Pane */
 .preview-container {
-    flex: 1 1 auto;
+    flex: 1;
     min-height: 0;
     background-color: white;
+    display: flex;
+    flex-direction: column;
 }
 
 .preview-toolbar {

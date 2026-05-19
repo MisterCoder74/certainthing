@@ -90,19 +90,16 @@ if (!isset($_SESSION['user_id'])) {
                 <!-- Right Pane: Reasoning/Processing -->
                 <section class="pane right-pane" id="reasoning-pane">
                     <div class="pane-header">
-                        <div class="pane-tabs">
-                            <button class="pane-tab-btn active" data-tab="reasoning">Reasoning</button>
-                            <button class="pane-tab-btn" data-tab="preview">Live Preview</button>
-                        </div>
+                        <div class="pane-title">Reasoning & Preview</div>
                         <div class="pane-header-actions">
                             <div id="status-badge" class="status-badge idle">Idle</div>
                             <button id="reasoning-toggle-pane" class="btn-small" title="Close reasoning pane">✕</button>
                         </div>
                     </div>
-                    <div class="reasoning-container tab-content active" id="reasoning-container">
+                    <div class="reasoning-container" id="reasoning-container">
                         <!-- Reasoning steps will appear here -->
                     </div>
-                    <div class="preview-container tab-content" id="preview-container">
+                    <div class="preview-container" id="preview-container">
                         <div class="preview-toolbar">
                             <button id="refresh-preview-btn" class="btn-small">Refresh</button>
                             <span class="preview-url">sandbox://index.html</span>
