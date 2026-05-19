@@ -142,9 +142,10 @@ send_event('reasoning', 'Connecting to OpenAI...');
 $ch = curl_init('https://api.openai.com/v1/chat/completions');
 
 $post_data = [
-    'model' => 'gpt-4o',
+    'model' => 'o1-mini', // Upgraded to o1-mini for real thinking tokens (referred as o4-mini in plan)
     'messages' => $messages,
-    'stream' => true
+    'stream' => true,
+    'max_completion_tokens' => 5000
 ];
 
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -168,6 +169,16 @@ curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $data) use (&$full_respons
                 break;
             }
             $json = json_decode($json_str, true);
+            
+            // Handle Reasoning Content (Thinking Tokens)
+            if (isset($json['choices'][0]['delta']['reasoning_content'])) {
+                $reasoning = $json['choices'][0]['delta']['reasoning_content'];
+                echo "data: " . json_encode(['type' => 'reasoning', 'text' => $reasoning]) . "\n\n";
+                if (ob_get_level() > 0) ob_flush();
+                flush();
+            }
+
+            // Handle Regular Content
             if (isset($json['choices'][0]['delta']['content'])) {
                 $content = $json['choices'][0]['delta']['content'];
                 $full_response .= $content;

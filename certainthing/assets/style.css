@@ -180,25 +180,53 @@ body, html {
 }
 
 .right-pane {
-    width: 400px;
+    width: 500px;
     background-color: var(--bg-color);
+    transition: width 0.3s ease;
 }
 
 .pane-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 1rem;
     background-color: var(--pane-bg);
     border-bottom: 1px solid var(--border-color);
+    min-height: 50px;
 }
 
 .pane-header h2 {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--reasoning-text);
+}
+
+.pane-tabs {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.pane-tab-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--reasoning-text);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.pane-tab-btn:hover {
+    color: var(--text-color);
+}
+
+.pane-tab-btn.active {
+    background-color: var(--border-color);
+    color: var(--accent-color);
+    border-color: var(--border-color);
 }
 
 .btn-small {
@@ -209,6 +237,18 @@ body, html {
     border: 1px solid var(--border-color);
     border-radius: 4px;
     cursor: pointer;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.tab-content.active {
+    display: flex;
 }
 
 /* Messages */
@@ -435,6 +475,54 @@ body, html {
     color: var(--reasoning-text);
 }
 
+/* Preview Pane */
+.preview-container {
+    background-color: white;
+}
+
+.preview-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.4rem 1rem;
+    background-color: #f1f3f4;
+    border-bottom: 1px solid #ddd;
+    color: #333;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 0.8rem;
+}
+
+.preview-url {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 0.1rem 0.75rem;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#preview-iframe {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background-color: white;
+}
+
+#refresh-preview-btn {
+    padding: 0.1rem 0.5rem;
+    background: #e0e0e0;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #333;
+}
+
+#refresh-preview-btn:hover {
+    background: #d0d0d0;
+}
+
 /* Code Blocks & Tabs */
 .code-container {
     margin: 1.5rem 0;
@@ -557,6 +645,27 @@ code {
     background-color: var(--border-color);
 }
 
+/* GitHub Deploy Button in multi-file container */
+.github-deploy-btn {
+    margin-top: 0.5rem;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem;
+    background-color: #24292e;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.github-deploy-btn:hover {
+    background-color: #2f363d;
+}
+
 /* Toast */
 #toast-container {
     position: fixed;
@@ -588,6 +697,40 @@ code {
 
 @keyframes fadeOut {
     to { opacity: 0; visibility: hidden; }
+}
+
+/* GitHub Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background-color: var(--pane-bg);
+    padding: 2rem;
+    border-radius: 8px;
+    width: 400px;
+    max-width: 90%;
+    border: 1px solid var(--border-color);
+}
+
+.modal-content h3 {
+    margin-top: 0;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
 }
 
 /* ==========================================
