@@ -1,8 +1,15 @@
 # CertainThing
 
-AI-powered vibe coding assistant with multimodal input, website analysis, and conversational + reasoning interface.
+AI-powered vibe coding assistant with multimodal input, website analysis, conversational + reasoning interface, session management, and one-click code deployment.
 
 ## Current Status
+
+**Phase 6 — Polish & Integration** implemented:
+- **Session Sidebar**: List, switch, search, and delete past projects from a collapsible left sidebar.
+- **App Deploy (F10)**: Press F10 (or click 🚀 Deploy) to save generated code files to a live-viewable `deploy/` folder. Each deployment gets a unique URL to view the app running live.
+- **Mobile Toggle**: Collapsible reasoning pane toggled via a button in the header on mobile screens (≤830px).
+- **Refined Error Handling**: Comprehensive `try/catch` blocks across all fetch operations with user-friendly toast notifications.
+
 **Phase 5 — Website Analyzer** implemented:
 - Client-side URL detection in chat messages.
 - Server-side web scraping via cURL/DOMDocument extraction.
@@ -34,8 +41,11 @@ AI-powered vibe coding assistant with multimodal input, website analysis, and co
 2. Ensure `certainthing/data` is writable by the web server.
 3. Configure your web server to point to the `certainthing/` directory or access it via `/certainthing/`.
 4. Set the `OPENAI_API_KEY` environment variable.
+5. The `certainthing/deploy/` directory will be created automatically on first deploy.
 
 ## Usage
 - Register a new account at `register.php`.
 - Start chatting in `index.php`.
-- View the AI's reasoning in the right pane.
+- Use the sidebar (☰) to manage sessions.
+- Press **F10** or click **🚀 Deploy** to deploy generated code live.
+- View the AI's reasoning in the right pane on the right (toggle with 🧠 on mobile).

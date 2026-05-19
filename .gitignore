@@ -1,4 +1,5 @@
 certainthing/data/sessions/*.json
 certainthing/data/users.json
+certainthing/deploy/
 .env
 *.log
