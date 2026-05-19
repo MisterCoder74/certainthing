@@ -4,6 +4,11 @@ AI-powered vibe coding assistant with multimodal input, website analysis, conver
 
 ## Current Status
 
+**Phase 8 — Documentation & Handoff** implemented:
+- Added full project documentation page at [`certainthing/doc.html`](certainthing/doc.html).
+- Includes architecture notes, full file tree with descriptions, function reference by file, use cases, feature flows, and end-to-end prompt-to-deploy workflow.
+- Uses the app's dark visual language (`#0d1117` background, `#58a6ff` accents) for consistency.
+
 **Phase 7 — Advanced Features** implemented:
 - **Real Thinking Tokens**: Switched to `o3-mini` for true model-based reasoning streaming via `reasoning_content`.
 - **Live Preview Pane**: Tabbed interface to switch between reasoning trace and a live sandboxed iframe preview of the generated code.
