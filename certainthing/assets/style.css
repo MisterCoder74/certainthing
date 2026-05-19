@@ -330,6 +330,54 @@ body, html {
     color: var(--text-color);
     border-bottom-left-radius: 2px;
     border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.assistant-msg-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(139, 148, 158, 0.25);
+}
+
+.assistant-msg-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.assistant-msg-time {
+    font-size: 0.75rem;
+    color: var(--reasoning-text);
+    font-weight: 500;
+}
+
+.assistant-meta-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.assistant-copy-btn {
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--reasoning-text);
+    border-radius: 4px;
+    padding: 0.18rem 0.45rem;
+    font-size: 0.72rem;
+    cursor: pointer;
+}
+
+.assistant-copy-btn:hover {
+    color: var(--text-color);
+    background-color: var(--border-color);
 }
 
 /* Input Area */
@@ -401,7 +449,7 @@ body, html {
     gap: 0.5rem;
 }
 
-#attach-btn, #send-btn {
+#attach-btn, #send-btn, #stop-btn {
     background: transparent;
     border: none;
     color: var(--reasoning-text);
@@ -417,8 +465,67 @@ body, html {
     font-weight: bold;
 }
 
-#attach-btn:hover, #send-btn:hover {
+#stop-btn {
+    color: var(--error-color);
+    font-size: 0.88rem;
+    font-weight: 600;
+    display: none;
+}
+
+#stop-btn.active {
+    display: inline-flex;
+    align-items: center;
+}
+
+#attach-btn:hover, #send-btn:hover, #stop-btn:hover {
     background-color: var(--border-color);
+}
+
+#stop-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.message-spinner {
+    display: none;
+    align-self: flex-start;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background-color: var(--assistant-bubble);
+}
+
+.message-spinner.active {
+    display: inline-flex;
+}
+
+.message-spinner-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background-color: var(--reasoning-text);
+    animation: messageSpinnerPulse 1s infinite ease-in-out;
+}
+
+.message-spinner-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.message-spinner-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes messageSpinnerPulse {
+    0%, 80%, 100% {
+        opacity: 0.3;
+        transform: scale(0.85);
+    }
+    40% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* Reasoning Pane */
@@ -437,18 +544,50 @@ body, html {
 
 .reasoning-step {
     color: var(--reasoning-text);
-    line-height: 1.4;
-    animation: fadeIn 0.3s ease-out;
-    transition: opacity 0.3s ease;
+    line-height: 1.35;
+    animation: fadeIn 0.25s ease-out;
+    transition: opacity 0.25s ease;
+    border: 1px solid rgba(48, 54, 61, 0.7);
+    border-radius: 8px;
+    padding: 0.55rem 0.65rem;
+    background-color: rgba(22, 27, 34, 0.6);
 }
 
 .reasoning-step.is-old {
-    opacity: 0.5;
+    opacity: 0.55;
 }
 
-.reasoning-step::before {
-    content: "✦ ";
+.reasoning-step-main {
+    color: var(--text-color);
+    font-size: 0.8rem;
+    margin-bottom: 0.35rem;
+}
+
+.reasoning-step-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+}
+
+.reasoning-pill {
+    border: 1px solid rgba(48, 54, 61, 0.9);
+    border-radius: 999px;
+    padding: 0.1rem 0.45rem;
+    color: var(--reasoning-text);
+}
+
+.reasoning-pill.action {
     color: var(--accent-color);
+}
+
+.reasoning-pill.model {
+    color: #d29922;
+}
+
+.reasoning-pill.resource {
+    color: var(--text-color);
 }
 
 @keyframes fadeIn {
@@ -481,6 +620,11 @@ body, html {
 .status-badge.error {
     background-color: rgba(218, 54, 51, 0.2);
     color: var(--error-color);
+}
+
+.status-badge.stopped {
+    background-color: rgba(139, 148, 158, 0.2);
+    color: var(--reasoning-text);
 }
 
 .status-badge.idle {
@@ -718,7 +862,11 @@ code {
     to { opacity: 0; visibility: hidden; }
 }
 
-/* GitHub Modal */
+/* GitHub + API Key Modals */
+.hidden {
+    display: none !important;
+}
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -750,6 +898,28 @@ code {
     justify-content: flex-end;
     gap: 1rem;
     margin-top: 1.5rem;
+}
+
+.api-key-modal .modal-content {
+    width: 460px;
+}
+
+.api-key-help {
+    font-size: 0.82rem;
+    color: var(--reasoning-text);
+    margin: 0 0 1rem;
+}
+
+.api-key-status {
+    min-height: 1.1rem;
+    font-size: 0.78rem;
+    color: var(--reasoning-text);
+}
+
+#api-key-save {
+    width: auto;
+    margin-top: 0;
+    padding: 0.55rem 1.25rem;
 }
 
 /* ==========================================

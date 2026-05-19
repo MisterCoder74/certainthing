@@ -2,13 +2,83 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/scrape.php';
 
-// Prevent output buffering
 header('Content-Type: text/event-stream');
 header('Cache-Control: no-cache');
 header('Connection: keep-alive');
-header('X-Accel-Buffering: no'); // For Nginx
+header('X-Accel-Buffering: no');
 
 check_auth();
+
+function reasoning_step($text, $action = 'system', $resource = '', $model = '', $streaming = false) {
+    send_event('reasoning', [
+        'text' => $text,
+        'action' => $action,
+        'resource' => $resource,
+        'model' => $model,
+        'timestamp' => date('c'),
+        'streaming' => $streaming
+    ]);
+}
+
+function summarize_prompt($prompt, $maxLen = 80) {
+    $prompt = trim((string) $prompt);
+    if ($prompt === '') {
+        return '';
+    }
+
+    $clean = preg_replace('/\s+/', ' ', $prompt);
+    if (mb_strlen($clean) > $maxLen) {
+        return mb_substr($clean, 0, $maxLen) . '…';
+    }
+
+    return $clean;
+}
+
+function extract_generated_filenames($text) {
+    $files = [];
+    if (!is_string($text) || $text === '') {
+        return $files;
+    }
+
+    if (!preg_match_all('/```([^\n`]*)\n([\s\S]*?)```/m', $text, $matches, PREG_SET_ORDER)) {
+        return $files;
+    }
+
+    foreach ($matches as $match) {
+        $info = trim($match[1] ?? '');
+        if ($info === '') {
+            continue;
+        }
+
+        $language = 'text';
+        $filename = '';
+
+        if (preg_match('/^([^\s]+)\s+\[([^\]]+)\]$/', $info, $parts)) {
+            $language = trim($parts[1]);
+            $filename = trim($parts[2]);
+        } elseif (preg_match('/^([^\s]+)\s+(.+)$/', $info, $parts)) {
+            $language = trim($parts[1]);
+            $candidate = trim($parts[2]);
+            if (preg_match('/[\\\/]|\.[A-Za-z0-9]+$/', $candidate)) {
+                $filename = $candidate;
+            }
+        } else {
+            $language = $info;
+        }
+
+        if ($filename === '' && preg_match('/\[([^\]]+)\]/', $info, $named)) {
+            $filename = trim($named[1]);
+        }
+
+        if ($filename !== '' && !in_array($filename, $files, true)) {
+            $files[] = $filename;
+        } elseif ($filename === '' && $language !== '' && !in_array($language, $files, true)) {
+            $files[] = 'file.' . preg_replace('/[^a-z0-9]+/i', '', strtolower($language));
+        }
+    }
+
+    return $files;
+}
 
 send_event('status', 'Thinking');
 
@@ -17,46 +87,61 @@ $message = $_POST['message'] ?? '';
 $session_id = $_POST['session_id'] ?? 'default';
 $attachments = isset($_POST['attachments']) ? json_decode($_POST['attachments'], true) : [];
 $urls = isset($_POST['urls']) ? json_decode($_POST['urls'], true) : [];
+$model = 'gpt-5-nano';
 
-if (empty($message) && empty($attachments)) {
+if (!is_array($attachments)) {
+    $attachments = [];
+}
+
+if (!is_array($urls)) {
+    $urls = [];
+}
+
+if (trim($message) === '' && empty($attachments)) {
     send_event('error', 'Message is empty');
     exit;
 }
 
-// 1. Process Attachments for LLM
+$promptSummary = summarize_prompt($message);
+if ($promptSummary !== '') {
+    reasoning_step('Processing prompt: "' . $promptSummary . '"', 'prompt_process', 'User prompt');
+}
+
 $processed_message = $message;
 $has_images = false;
 $image_attachments = [];
 
 if (!empty($attachments)) {
     foreach ($attachments as $att) {
-        if ($att['is_image']) {
+        $attName = $att['name'] ?? 'attachment';
+        if (!empty($att['is_image'])) {
             $has_images = true;
-            $image_attachments[] = $att['content']; // base64 data url
+            $image_attachments[] = $att['content'] ?? '';
+            reasoning_step('Loading image: ' . $attName, 'image_load', $attName);
         } else {
-            $processed_message .= "\n\n--- ATTACHED FILE: {$att['name']} ---\n" . $att['content'] . "\n--- END OF FILE ---";
+            reasoning_step('Loading file: ' . $attName, 'file_load', $attName);
+            $processed_message .= "\n\n--- ATTACHED FILE: {$attName} ---\n" . ($att['content'] ?? '') . "\n--- END OF FILE ---";
         }
     }
 }
 
-// 1b. Scrape URLs if provided
 if (!empty($urls)) {
     foreach ($urls as $url) {
-        send_event('reasoning', "Fetching website: {$url}...");
+        reasoning_step('Fetching website: ' . $url, 'web_fetch', $url);
         $scrape_result = scrape_url($url);
-        if ($scrape_result['success']) {
-            $scraped_title = $scrape_result['title'];
-            $scraped_content = $scrape_result['content'];
+        if (!empty($scrape_result['success'])) {
+            $scraped_title = $scrape_result['title'] ?? $url;
+            $scraped_content = $scrape_result['content'] ?? '';
             $processed_message .= "\n\n--- WEBSITE CONTENT: {$scraped_title} ({$url}) ---\n{$scraped_content}\n--- END OF CONTENT ---";
-            send_event('reasoning', "Successfully fetched: {$url}");
+            reasoning_step('Fetched website content: ' . $url, 'web_fetch_success', $url);
         } else {
-            send_event('reasoning', "Failed to fetch website: {$url} - " . $scrape_result['error']);
+            $reason = $scrape_result['error'] ?? 'Unknown error';
+            reasoning_step('Failed to fetch website: ' . $url . ' - ' . $reason, 'web_fetch_failed', $url);
         }
     }
 }
 
-// 2. Load/Create Session
-send_event('reasoning', 'Loading session history...');
+reasoning_step('Loading session: ' . $session_id, 'session_load', $session_id);
 $session_file = SESSIONS_DIR . '/' . $user_id . '_' . $session_id . '.json';
 $session_data = safe_read_json($session_file);
 
@@ -69,32 +154,31 @@ if (empty($session_data)) {
     ];
 }
 
-// 3. Prepare Prompt
-send_event('reasoning', 'Preparing system prompt...');
+reasoning_step('Preparing system prompt', 'prompt_load', 'system_prompt.txt');
 $system_prompt = file_get_contents(PROMPTS_DIR . '/system_prompt.txt');
 $messages = [
     ['role' => 'developer', 'content' => $system_prompt]
 ];
 
-// Add history
 foreach ($session_data['messages'] as $msg) {
-    $role = $msg['role'];
-    $content = $msg['content'];
-    
-    if ($role === 'user' && !empty($msg['attachments'])) {
+    $role = $msg['role'] ?? '';
+    $content = $msg['content'] ?? '';
+
+    if ($role === 'user' && !empty($msg['attachments']) && is_array($msg['attachments'])) {
         $has_img = false;
         $processed = $content;
         $imgs = [];
-        
+
         foreach ($msg['attachments'] as $att) {
-            if ($att['is_image']) {
+            if (!empty($att['is_image'])) {
                 $has_img = true;
-                $imgs[] = $att['content'];
+                $imgs[] = $att['content'] ?? '';
             } else {
-                $processed .= "\n\n--- ATTACHED FILE: {$att['name']} ---\n" . $att['content'] . "\n--- END OF FILE ---";
+                $attName = $att['name'] ?? 'attachment';
+                $processed .= "\n\n--- ATTACHED FILE: {$attName} ---\n" . ($att['content'] ?? '') . "\n--- END OF FILE ---";
             }
         }
-        
+
         if ($has_img) {
             $user_content = [['type' => 'text', 'text' => $processed]];
             foreach ($imgs as $url) {
@@ -109,11 +193,8 @@ foreach ($session_data['messages'] as $msg) {
     }
 }
 
-// Add new message
 if ($has_images) {
-    $user_content = [
-        ['type' => 'text', 'text' => $processed_message]
-    ];
+    $user_content = [['type' => 'text', 'text' => $processed_message]];
     foreach ($image_attachments as $img_url) {
         $user_content[] = [
             'type' => 'image_url',
@@ -125,17 +206,17 @@ if ($has_images) {
     $messages[] = ['role' => 'user', 'content' => $processed_message];
 }
 
-// 4. OpenAI Request
-if (empty($openai_key)) {
+$openai_key = get_openai_api_key();
+if ($openai_key === '') {
     send_event('error', 'OpenAI API key not configured');
     exit;
 }
 
-send_event('reasoning', 'Connecting to OpenAI...');
-$ch = curl_init('https://api.openai.com/v1/chat/completions');
+reasoning_step('Calling model: ' . $model, 'model_call', 'chat.completions', $model);
 
+$ch = curl_init('https://api.openai.com/v1/chat/completions');
 $post_data = [
-    'model' => 'gpt-5-nano', // Upgraded to gpt-5-nano for real thinking tokens
+    'model' => $model,
     'messages' => $messages,
     'stream' => true,
     'stream_options' => ['include_usage' => true],
@@ -151,76 +232,134 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
 ]);
 
 send_event('status', 'Generating');
+
 $full_response = '';
 $buffer = '';
 $json_buffer = '';
+$request_cancelled = false;
 
-// Callback for streaming
-curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $data) use (&$full_response, &$buffer, &$json_buffer) {
+curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use (&$full_response, &$buffer, &$json_buffer, &$request_cancelled, $model) {
+    if (connection_aborted()) {
+        $request_cancelled = true;
+        return 0;
+    }
+
     $buffer .= $data;
-    while (($pos = strpos($buffer, "\n")) !== false) {
-        $line = substr($buffer, 0, $pos);
-        $buffer = substr($buffer, $pos + 1);
-        $line = trim($line);
 
-        if (empty($line)) continue;
-        if (strpos($line, 'data: ') !== 0) continue;
+    while (($eventPos = strpos($buffer, "\n\n")) !== false) {
+        $eventChunk = substr($buffer, 0, $eventPos);
+        $buffer = substr($buffer, $eventPos + 2);
 
-        $json_str = substr($line, 6);
-        if ($json_str === '[DONE]') {
+        $lines = explode("\n", $eventChunk);
+        $eventData = '';
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || strpos($line, 'data:') !== 0) {
+                continue;
+            }
+
+            $eventData .= trim(substr($line, 5));
+        }
+
+        if ($eventData === '') {
+            continue;
+        }
+
+        if ($eventData === '[DONE]') {
             $json_buffer = '';
             continue;
         }
 
-        $json_buffer .= $json_str;
+        $json_buffer .= $eventData;
         $json = json_decode($json_buffer, true);
 
-        if ($json !== null && json_last_error() === JSON_ERROR_NONE) {
-            $json_buffer = ''; // Success, clear for next event
+        if ($json === null && json_last_error() !== JSON_ERROR_NONE) {
+            continue;
+        }
 
-            // Handle Usage
-            if (isset($json['usage'])) {
-                $usage = $json['usage'];
-                echo "data: " . json_encode(['type' => 'usage', 'usage' => $usage]) . "\n\n";
-                if (ob_get_level() > 0) ob_flush();
-                flush();
-            }
+        $json_buffer = '';
 
-            // Handle Reasoning Content (Thinking Tokens)
-            if (isset($json['choices'][0]['delta']['reasoning_content'])) {
-                $reasoning = $json['choices'][0]['delta']['reasoning_content'];
-                echo "data: " . json_encode(['type' => 'reasoning', 'text' => $reasoning, 'streaming' => true]) . "\n\n";
-                if (ob_get_level() > 0) ob_flush();
-                flush();
-            }
+        if (isset($json['usage'])) {
+            send_event('usage', [
+                'usage' => $json['usage'],
+                'timestamp' => date('c'),
+                'model' => $model
+            ]);
+        }
 
-            // Handle Regular Content
-            if (isset($json['choices'][0]['delta']['content'])) {
-                $content = $json['choices'][0]['delta']['content'];
-                $full_response .= $content;
-                echo "data: " . json_encode(['type' => 'content', 'text' => $content]) . "\n\n";
-                if (ob_get_level() > 0) ob_flush();
-                flush();
+        if (isset($json['choices'][0]['delta']['reasoning_content'])) {
+            $reasoning = (string) $json['choices'][0]['delta']['reasoning_content'];
+            if ($reasoning !== '') {
+                send_event('reasoning', [
+                    'text' => $reasoning,
+                    'action' => 'model_reasoning',
+                    'resource' => 'Response reasoning',
+                    'model' => $model,
+                    'timestamp' => date('c'),
+                    'streaming' => true
+                ]);
             }
         }
+
+        if (isset($json['choices'][0]['delta']['content'])) {
+            $content = (string) $json['choices'][0]['delta']['content'];
+            $full_response .= $content;
+            send_event('content', ['text' => $content]);
+        }
     }
+
     return strlen($data);
 });
 
-curl_exec($ch);
+$curl_result = curl_exec($ch);
+$curl_errno = curl_errno($ch);
+$curl_error = curl_error($ch);
+$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
-// 5. Save Session
+if (connection_aborted() || $request_cancelled) {
+    exit;
+}
+
+if ($curl_result === false && $curl_errno !== CURLE_OK) {
+    send_event('error', 'OpenAI streaming error: ' . ($curl_error ?: 'Unknown cURL error'));
+    send_event('status', 'Error');
+    exit;
+}
+
+if ($http_code >= 400) {
+    send_event('error', 'OpenAI request failed with HTTP ' . $http_code);
+    send_event('status', 'Error');
+    exit;
+}
+
+if (trim($full_response) === '') {
+    send_event('error', 'No response received from model');
+    send_event('status', 'Error');
+    exit;
+}
+
+$generatedFiles = extract_generated_filenames($full_response);
+foreach ($generatedFiles as $fileName) {
+    reasoning_step('Creating file: ' . $fileName, 'file_create', $fileName, $model);
+}
+
+reasoning_step('Saving session: ' . $session_id, 'session_save', $session_id);
 $session_data['messages'][] = [
-    'role' => 'user', 
-    'content' => $message, 
+    'role' => 'user',
+    'content' => $message,
     'attachments' => $attachments,
     'timestamp' => date('c')
 ];
-$session_data['messages'][] = ['role' => 'assistant', 'content' => $full_response, 'timestamp' => date('c')];
+$session_data['messages'][] = [
+    'role' => 'assistant',
+    'content' => $full_response,
+    'timestamp' => date('c')
+];
 $session_data['updated_at'] = date('c');
 
 safe_write_json($session_file, $session_data);
 
-send_event('reasoning', 'Done.');
+reasoning_step('Done.', 'done', 'Response ready', $model);
 send_event('status', 'Done');

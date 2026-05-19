@@ -1,5 +1,6 @@
 certainthing/data/sessions/*.json
 certainthing/data/users.json
+certainthing/data/openai_api_key.txt
 certainthing/deploy/
 .env
 *.log

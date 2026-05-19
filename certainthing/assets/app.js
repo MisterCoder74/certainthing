@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const newChatBtn = document.getElementById('new-chat-btn');
     const newChatSidebarBtn = document.getElementById('new-chat-sidebar-btn');
     const attachBtn = document.getElementById('attach-btn');
+    const sendBtn = document.getElementById('send-btn');
+    const stopBtn = document.getElementById('stop-btn');
     const fileInput = document.getElementById('file-input');
     const attachmentPreview = document.getElementById('attachment-preview');
     const deployBtn = document.getElementById('deploy-btn');
@@ -26,12 +28,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const rightPane = document.getElementById('reasoning-pane');
     const previewIframe = document.getElementById('preview-iframe');
     const refreshPreviewBtn = document.getElementById('refresh-preview-btn');
+    const apiKeyBtn = document.getElementById('api-key-btn');
+    const apiKeyModal = document.getElementById('api-key-modal');
+    const apiKeyInput = document.getElementById('openai-api-key-input');
+    const apiKeyStatus = document.getElementById('api-key-status');
+    const apiKeySaveBtn = document.getElementById('api-key-save');
+    const apiKeyCancelBtn = document.getElementById('api-key-cancel');
+    const messageSpinner = document.getElementById('message-spinner');
     
     let currentSessionId = localStorage.getItem('certainthing_session_id') || 'sess_' + Date.now();
     localStorage.setItem('certainthing_session_id', currentSessionId);
     let attachmentQueue = [];
     let allSessions = [];
     let isDeploying = false;
+    let isGenerating = false;
+    let currentStreamController = null;
 
     // Initial Load
     loadSession(currentSessionId);
@@ -80,10 +91,28 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshPreview();
     });
 
+    // =============================================
+    // API Key Modal
+    // =============================================
+    if (apiKeyBtn && apiKeyModal && apiKeyCancelBtn && apiKeySaveBtn) {
+        apiKeyBtn.addEventListener('click', openApiKeyModal);
+        apiKeyCancelBtn.addEventListener('click', closeApiKeyModal);
+        apiKeySaveBtn.addEventListener('click', saveApiKey);
+        apiKeyModal.addEventListener('click', (e) => {
+            if (e.target === apiKeyModal) closeApiKeyModal();
+        });
+    }
+
     // Close reasoning pane on escape
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && rightPane.classList.contains('show-reasoning')) {
+        if (e.key !== 'Escape') return;
+
+        if (rightPane.classList.contains('show-reasoning')) {
             rightPane.classList.remove('show-reasoning');
+        }
+
+        if (apiKeyModal && !apiKeyModal.classList.contains('hidden')) {
+            closeApiKeyModal();
         }
     });
 
@@ -192,10 +221,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // =============================================
     chatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        if (isGenerating) {
+            showToast('Please wait for the current response or click Stop.', 'info');
+            return;
+        }
+
         const message = chatInput.value.trim();
         if (!message && attachmentQueue.length === 0) return;
 
-        // Detect URLs in the message
         const urlRegex = /(https?:\/\/[^\s]+)/g;
         const urls = [];
         let match;
@@ -217,51 +251,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // =============================================
     // New Chat
     // =============================================
-    async function startNewChat() {
-        const newSessionId = 'sess_' + Date.now();
-        const nowIso = new Date().toISOString();
-
-        currentSessionId = newSessionId;
-        localStorage.setItem('certainthing_session_id', currentSessionId);
-        messagesContainer.innerHTML = '';
-        reasoningContainer.innerHTML = '';
-        appendMessage('assistant', "New session started! How can I help?");
-
-        // Optimistically show the new session immediately in the sidebar
-        allSessions = allSessions.filter(session => session.session_id !== newSessionId);
-        allSessions.unshift({
-            session_id: newSessionId,
-            title: 'Untitled',
-            created_at: nowIso,
-            updated_at: nowIso,
-            message_count: 0
-        });
-        renderSessions(allSessions);
-        updateSessionCount();
-
-        // Create placeholder session file so it appears in sidebar immediately on refresh too
-        try {
-            const response = await fetch('api/create_session.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ session_id: newSessionId })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to create session placeholder');
-            }
-        } catch (err) {
-            console.error('Failed to create session placeholder', err);
-            showToast('New chat created locally but failed to persist session file', 'error');
+    function startNewChat() {
+        if (isGenerating && currentStreamController) {
+            currentStreamController.abort();
         }
 
+        currentSessionId = 'sess_' + Date.now();
+        localStorage.setItem('certainthing_session_id', currentSessionId);
+        messagesContainer.querySelectorAll('.message').forEach(msg => msg.remove());
+        reasoningContainer.innerHTML = '';
+        statusBadge.textContent = 'Idle';
+        statusBadge.className = 'status-badge idle';
+
+        appendMessage('assistant', "Hello! I'm CertainThing. I can help you build web projects. What are we building today?");
+        hideGenerationUi();
+        renderSessions(allSessions);
         showToast('New session started', 'info');
-        fetchSessions();
     }
 
     newChatBtn.addEventListener('click', startNewChat);
     if (newChatSidebarBtn) {
         newChatSidebarBtn.addEventListener('click', startNewChat);
+    }
+
+    if (stopBtn) {
+        stopBtn.addEventListener('click', () => {
+            if (currentStreamController) {
+                stopBtn.disabled = true;
+                stopBtn.textContent = 'Stopping...';
+                currentStreamController.abort();
+            }
+        });
     }
 
     // =============================================
@@ -353,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         currentSessionId = sessionId;
         localStorage.setItem('certainthing_session_id', currentSessionId);
-        messagesContainer.innerHTML = '';
+        messagesContainer.querySelectorAll('.message').forEach(msg => msg.remove());
         reasoningContainer.innerHTML = '';
         statusBadge.textContent = 'Idle';
         statusBadge.className = 'status-badge idle';
@@ -400,18 +420,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Failed to load session');
             const data = await response.json();
             if (data.messages && data.messages.length > 0) {
-                messagesContainer.innerHTML = '';
+                messagesContainer.querySelectorAll('.message').forEach(msg => msg.remove());
                 data.messages.forEach(msg => {
-                    appendMessage(msg.role, msg.content, msg.attachments || []);
+                    appendMessage(msg.role, msg.content, msg.attachments || [], msg.timestamp || null);
                 });
                 refreshPreview();
             } else {
-                // Empty session, show welcome
+                messagesContainer.querySelectorAll('.message').forEach(msg => msg.remove());
                 appendMessage('assistant', "Hello! I'm CertainThing. I can help you build web projects. What are we building today?");
             }
         } catch (err) {
             console.error('Failed to load session', err);
             showToast('Failed to load previous session', 'error');
+            messagesContainer.querySelectorAll('.message').forEach(msg => msg.remove());
             appendMessage('assistant', "Hello! I'm CertainThing. I can help you build web projects. What are we building today?");
         }
     }
@@ -532,12 +553,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const msgDiv = document.createElement('div');
             msgDiv.className = 'message assistant';
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble';
-            bubble.innerHTML = deployHtml;
+            const bubble = createAssistantBubble('Deployment completed successfully.', new Date().toISOString());
+            const textDiv = document.createElement('div');
+            textDiv.className = 'text-content';
+            textDiv.innerHTML = deployHtml;
+            bubble.appendChild(textDiv);
             msgDiv.appendChild(bubble);
-            messagesContainer.appendChild(msgDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            appendMessageNode(msgDiv);
 
             showToast('🚀 App deployed! ' + data.count + ' files live', 'success');
         } catch (err) {
@@ -551,20 +573,179 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function escapeHtml(text) {
         const div = document.createElement('div');
-        div.textContent = text;
+        div.textContent = text == null ? '' : String(text);
         return div.innerHTML;
+    }
+
+    function formatClock(timestamp) {
+        const date = timestamp ? new Date(timestamp) : new Date();
+        if (Number.isNaN(date.getTime())) return '--:--';
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    function appendMessageNode(node) {
+        if (messageSpinner && messageSpinner.parentNode === messagesContainer) {
+            messagesContainer.insertBefore(node, messageSpinner);
+        } else {
+            messagesContainer.appendChild(node);
+        }
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function createAssistantMeta(bubble, timestamp, rawText) {
+        const meta = document.createElement('div');
+        meta.className = 'assistant-msg-meta';
+
+        const brand = document.createElement('div');
+        brand.className = 'assistant-msg-brand';
+        brand.textContent = '✦ CertainThing';
+
+        const right = document.createElement('div');
+        right.className = 'assistant-meta-right';
+
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'assistant-copy-btn';
+        copyBtn.textContent = 'Copy';
+        copyBtn.addEventListener('click', async () => {
+            const textToCopy = bubble.dataset.rawText || rawText || bubble.querySelector('.text-content')?.innerText || '';
+            await copyToClipboard(textToCopy);
+            const oldText = copyBtn.textContent;
+            copyBtn.textContent = 'Copied';
+            setTimeout(() => {
+                copyBtn.textContent = oldText;
+            }, 1500);
+        });
+
+        const time = document.createElement('span');
+        time.className = 'assistant-msg-time';
+        time.textContent = formatClock(timestamp);
+
+        right.appendChild(copyBtn);
+        right.appendChild(time);
+        meta.appendChild(brand);
+        meta.appendChild(right);
+
+        return meta;
+    }
+
+    function createAssistantBubble(rawText = '', timestamp = null) {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.dataset.rawText = rawText || '';
+        bubble.appendChild(createAssistantMeta(bubble, timestamp, rawText));
+        return bubble;
+    }
+
+    function normalizeLanguage(language) {
+        const lang = (language || '').trim().toLowerCase();
+        if (!lang) return 'text';
+
+        const aliases = {
+            js: 'javascript',
+            ts: 'typescript',
+            py: 'python',
+            sh: 'bash',
+            shell: 'bash',
+            md: 'markdown',
+            yml: 'yaml'
+        };
+
+        return aliases[lang] || lang.replace(/[^a-z0-9_+\-#]/g, '');
+    }
+
+    function detectLanguageFromFilename(filename) {
+        if (!filename || !filename.includes('.')) return '';
+        const ext = filename.split('.').pop().toLowerCase();
+        const map = {
+            html: 'html',
+            htm: 'html',
+            css: 'css',
+            js: 'javascript',
+            mjs: 'javascript',
+            cjs: 'javascript',
+            ts: 'typescript',
+            jsx: 'javascript',
+            tsx: 'typescript',
+            php: 'php',
+            py: 'python',
+            json: 'json',
+            md: 'markdown',
+            txt: 'text'
+        };
+        return map[ext] || '';
+    }
+
+    function parseFenceInfo(infoRaw) {
+        const info = (infoRaw || '').trim();
+        let lang = 'text';
+        let filename = '';
+
+        if (!info) return { lang, filename };
+
+        const bracket = info.match(/^([^\s]+)?\s*\[([^\]]+)\]\s*$/);
+        if (bracket) {
+            lang = normalizeLanguage(bracket[1] || 'text');
+            filename = (bracket[2] || '').trim();
+            return { lang, filename };
+        }
+
+        const parts = info.split(/\s+/).filter(Boolean);
+        if (parts.length === 1) {
+            if (/[\/\\]/.test(parts[0]) || /\.[A-Za-z0-9]+$/.test(parts[0])) {
+                filename = parts[0];
+                lang = detectLanguageFromFilename(filename) || 'text';
+            } else {
+                lang = normalizeLanguage(parts[0]);
+            }
+            return { lang, filename };
+        }
+
+        lang = normalizeLanguage(parts[0]);
+        filename = parts.slice(1).join(' ').trim().replace(/^\[|\]$/g, '');
+        if (!lang || lang === 'text') {
+            lang = detectLanguageFromFilename(filename) || 'text';
+        }
+
+        return { lang, filename };
+    }
+
+    function renderCodeBlock(lang, filename, code) {
+        const safeLang = normalizeLanguage(lang || 'text');
+        const safeFilename = filename ? escapeHtml(filename) : '';
+        const codeHtml = escapeHtml(code);
+
+        return `
+<div class="code-container" data-lang="${safeLang}" data-file="${safeFilename}">
+    <div class="code-header">
+        <div class="code-title">
+            <span class="language-badge">${safeLang}</span>
+            ${safeFilename ? `<span class="file-name">${safeFilename}</span>` : ''}
+        </div>
+        <div class="code-actions">
+            <button class="code-action-btn copy-btn" title="Copy to clipboard">Copy</button>
+            <button class="code-action-btn download-btn" title="Download file">Download</button>
+        </div>
+    </div>
+    <pre><code class="language-${safeLang}">${codeHtml}</code></pre>
+</div>`;
     }
 
     // =============================================
     // Message Rendering
     // =============================================
-    function appendMessage(role, text, attachments = []) {
+    function appendMessage(role, text, attachments = [], timestamp = null) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${role}`;
-        
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        
+
+        const bubble = role === 'assistant'
+            ? createAssistantBubble(text, timestamp)
+            : document.createElement('div');
+
+        if (role !== 'assistant') {
+            bubble.className = 'bubble';
+        }
+
         if (attachments && attachments.length > 0) {
             const attContainer = document.createElement('div');
             attContainer.className = 'message-attachments';
@@ -589,12 +770,10 @@ document.addEventListener('DOMContentLoaded', () => {
         textDiv.className = 'text-content';
         textDiv.innerHTML = formatText(text);
         bubble.appendChild(textDiv);
-        
+
         msgDiv.appendChild(bubble);
-        messagesContainer.appendChild(msgDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        
-        // Trigger highlight.js
+        appendMessageNode(msgDiv);
+
         msgDiv.querySelectorAll('pre code').forEach((block) => {
             try {
                 hljs.highlightElement(block);
@@ -604,61 +783,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (role === 'assistant') {
+            bubble.dataset.rawText = text || '';
             finalizeAssistantMessage(bubble);
         }
     }
 
     function formatText(text) {
         if (!text) return '';
-        
-        // Basic escaping
-        let escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        
-        // Code blocks with optional filename
-        // Matches: ```lang [filename] \n code ```
-        const blocks = [];
-        escaped = escaped.replace(/```(\w+)?(?:\s+\[([\w\.-]+)\])?\s?\n?([\s\S]*?)```/g, (match, lang, filename, code) => {
-            const displayLang = lang || 'text';
-            const displayFile = filename || '';
-            const codeTrimmed = code.trim();
-            const id = `__BLOCK_${blocks.length}__`;
-            
-            blocks.push(`
-<div class="code-container" data-lang="${displayLang}" data-file="${escapeHtml(displayFile)}">
-    <div class="code-header">
-        <div class="code-title">
-            <span class="language-badge">${displayLang}</span>
-            ${displayFile ? `<span class="file-name">${escapeHtml(displayFile)}</span>` : ''}
-        </div>
-        <div class="code-actions">
-            <button class="code-action-btn copy-btn" title="Copy to clipboard">Copy</button>
-            <button class="code-action-btn download-btn" title="Download file">Download</button>
-        </div>
-    </div>
-    <pre><code class="language-${displayLang}">${codeTrimmed}</code></pre>
-</div>`);
-            return id;
-        });
-        
-        // Newlines (replacing \n with <br> in non-code parts)
-        let html = escaped.replace(/\n/g, '<br>');
-        
-        // Restore blocks
-        blocks.forEach((blockHtml, index) => {
-            html = html.replace(`__BLOCK_${index}__`, () => blockHtml);
-        });
-        
-        return sanitizeHtml(html);
-    }
 
-    function sanitizeHtml(html) {
-        if (!html) return '';
-        // Use DOMParser to fix malformed HTML and close tags
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        // Prevent script execution by removing script tags if any (though they should be escaped)
-        const scripts = doc.querySelectorAll('script');
-        scripts.forEach(s => s.remove());
-        return doc.body.innerHTML;
+        const input = String(text).replace(/\r\n/g, '\n');
+        const fenceRegex = /```([^\n`]*)\n?([\s\S]*?)```/g;
+
+        let html = '';
+        let lastIndex = 0;
+        let match;
+
+        while ((match = fenceRegex.exec(input)) !== null) {
+            const before = input.slice(lastIndex, match.index);
+            if (before) {
+                html += escapeHtml(before).replace(/\n/g, '<br>');
+            }
+
+            const info = parseFenceInfo(match[1]);
+            html += renderCodeBlock(info.lang, info.filename, match[2]);
+            lastIndex = fenceRegex.lastIndex;
+        }
+
+        const remaining = input.slice(lastIndex);
+        if (remaining) {
+            html += escapeHtml(remaining).replace(/\n/g, '<br>');
+        }
+
+        return html;
     }
 
     function finalizeAssistantMessage(bubble) {
@@ -1050,32 +1206,222 @@ document.addEventListener('DOMContentLoaded', () => {
     // =============================================
     // Reasoning
     // =============================================
-    function appendReasoning(text, isStreaming = false) {
-        let lastStep = reasoningContainer.lastElementChild;
-        
-        if (isStreaming && lastStep && lastStep.classList.contains('reasoning-step') && !lastStep.classList.contains('is-old')) {
-            lastStep.textContent += text;
+    function appendReasoning(stepData, isStreaming = false) {
+        const payload = typeof stepData === 'string' ? { text: stepData } : (stepData || {});
+        const text = payload.text || '';
+        const action = (payload.action || 'event').replace(/_/g, ' ');
+        const resource = payload.resource || '';
+        const model = payload.model || '';
+        const timestamp = payload.timestamp || new Date().toISOString();
+
+        const lastStep = reasoningContainer.lastElementChild;
+        const canAppendToCurrent = Boolean(
+            isStreaming &&
+            lastStep &&
+            lastStep.classList.contains('reasoning-step') &&
+            lastStep.dataset.streaming === 'true' &&
+            lastStep.dataset.action === action &&
+            (lastStep.dataset.resource || '') === resource &&
+            (lastStep.dataset.model || '') === model
+        );
+
+        if (canAppendToCurrent) {
+            const main = lastStep.querySelector('.reasoning-step-main');
+            if (main) {
+                main.textContent += text;
+            }
+            const timeEl = lastStep.querySelector('.reasoning-time');
+            if (timeEl) {
+                timeEl.textContent = formatClock(timestamp);
+            }
         } else {
-            // Mark existing steps as old if not streaming or if we want a new block
             reasoningContainer.querySelectorAll('.reasoning-step').forEach(step => {
                 step.classList.add('is-old');
             });
 
             const step = document.createElement('div');
             step.className = 'reasoning-step';
-            step.textContent = text;
+            step.dataset.streaming = isStreaming ? 'true' : 'false';
+            step.dataset.action = action;
+            step.dataset.resource = resource;
+            step.dataset.model = model;
+
+            const main = document.createElement('div');
+            main.className = 'reasoning-step-main';
+            main.textContent = text || action;
+
+            const meta = document.createElement('div');
+            meta.className = 'reasoning-step-meta';
+
+            const actionPill = document.createElement('span');
+            actionPill.className = 'reasoning-pill action';
+            actionPill.textContent = action;
+            meta.appendChild(actionPill);
+
+            if (resource) {
+                const resourcePill = document.createElement('span');
+                resourcePill.className = 'reasoning-pill resource';
+                resourcePill.textContent = resource;
+                meta.appendChild(resourcePill);
+            }
+
+            if (model) {
+                const modelPill = document.createElement('span');
+                modelPill.className = 'reasoning-pill model';
+                modelPill.textContent = model;
+                meta.appendChild(modelPill);
+            }
+
+            const timePill = document.createElement('span');
+            timePill.className = 'reasoning-pill reasoning-time';
+            timePill.textContent = formatClock(timestamp);
+            meta.appendChild(timePill);
+
+            step.appendChild(main);
+            step.appendChild(meta);
             reasoningContainer.appendChild(step);
         }
+
         reasoningContainer.scrollTop = reasoningContainer.scrollHeight;
+    }
+
+    function showGenerationUi() {
+        isGenerating = true;
+
+        if (messageSpinner) {
+            messageSpinner.classList.add('active');
+            messageSpinner.setAttribute('aria-hidden', 'false');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        if (stopBtn) {
+            stopBtn.classList.add('active');
+            stopBtn.disabled = false;
+            stopBtn.textContent = 'Stop';
+        }
+
+        if (sendBtn) {
+            sendBtn.disabled = true;
+        }
+    }
+
+    function hideGenerationUi() {
+        isGenerating = false;
+
+        if (messageSpinner) {
+            messageSpinner.classList.remove('active');
+            messageSpinner.setAttribute('aria-hidden', 'true');
+        }
+
+        if (stopBtn) {
+            stopBtn.classList.remove('active');
+            stopBtn.disabled = false;
+            stopBtn.textContent = 'Stop';
+        }
+
+        if (sendBtn) {
+            sendBtn.disabled = false;
+        }
+    }
+
+    function setApiKeyStatus(message, isError = false) {
+        if (!apiKeyStatus) return;
+        apiKeyStatus.textContent = message || '';
+        apiKeyStatus.style.color = isError ? 'var(--error-color)' : 'var(--reasoning-text)';
+    }
+
+    async function openApiKeyModal() {
+        if (!apiKeyModal) return;
+
+        apiKeyModal.classList.remove('hidden');
+        if (apiKeyInput) {
+            apiKeyInput.value = '';
+            apiKeyInput.focus();
+        }
+
+        setApiKeyStatus('Checking current key...');
+
+        try {
+            const response = await fetch('api/save_api_key.php', { cache: 'no-store' });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to load key status');
+            }
+
+            if (data.configured) {
+                const source = data.source === 'file' ? 'saved on server' : 'environment';
+                const masked = data.masked_key ? ` (${data.masked_key})` : '';
+                setApiKeyStatus(`API key configured via ${source}${masked}.`);
+            } else {
+                setApiKeyStatus('No API key saved. You can save one now.');
+            }
+        } catch (err) {
+            console.error(err);
+            setApiKeyStatus('Failed to read current key status.', true);
+        }
+    }
+
+    function closeApiKeyModal() {
+        if (!apiKeyModal) return;
+        apiKeyModal.classList.add('hidden');
+        if (apiKeyInput) {
+            apiKeyInput.value = '';
+        }
+        setApiKeyStatus('');
+    }
+
+    async function saveApiKey() {
+        if (!apiKeyInput || !apiKeySaveBtn) return;
+
+        const apiKey = apiKeyInput.value.trim();
+        const oldText = apiKeySaveBtn.textContent;
+        apiKeySaveBtn.disabled = true;
+        apiKeySaveBtn.textContent = 'Saving...';
+
+        try {
+            const response = await fetch('api/save_api_key.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ api_key: apiKey })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to save API key');
+            }
+
+            setApiKeyStatus(data.configured
+                ? `Saved successfully (${data.masked_key || 'masked'}).`
+                : 'Cleared saved key. Using environment fallback.');
+            showToast('API key settings updated', 'success');
+
+            setTimeout(() => {
+                closeApiKeyModal();
+            }, 500);
+        } catch (err) {
+            console.error(err);
+            setApiKeyStatus(err.message || 'Failed to save API key', true);
+            showToast('Failed to save API key', 'error');
+        } finally {
+            apiKeySaveBtn.disabled = false;
+            apiKeySaveBtn.textContent = oldText;
+        }
+    }
+
+    function applyStatus(statusText) {
+        const normalized = (statusText || 'idle').toString();
+        const statusClass = normalized.toLowerCase().replace(/\./g, '').replace(/\s+/g, '-');
+        statusBadge.textContent = normalized;
+        statusBadge.className = `status-badge ${statusClass}`;
     }
 
     // =============================================
     // Send Message & SSE Streaming
     // =============================================
     async function sendMessage(message, attachments = [], urls = []) {
-        statusBadge.textContent = 'Thinking...';
-        statusBadge.className = 'status-badge thinking';
+        applyStatus('Thinking');
         reasoningContainer.innerHTML = '';
+        showGenerationUi();
 
         const formData = new FormData();
         formData.append('message', message);
@@ -1087,116 +1433,145 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('urls', JSON.stringify(urls));
         }
 
+        currentStreamController = new AbortController();
+
+        let assistantMessageDiv = null;
+        let assistantBubble = null;
+        let assistantTextDiv = null;
+        let fullText = '';
+        let doneStepSeen = false;
+        let pendingUsageStep = null;
+
         try {
             const response = await fetch('api/chat.php', {
                 method: 'POST',
                 body: formData,
-                cache: 'no-store'
+                cache: 'no-store',
+                signal: currentStreamController.signal
             });
 
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            if (!response.body) {
+                throw new Error('Empty streaming response');
+            }
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-            
-            let assistantMessageDiv = null;
-            let assistantBubble = null;
-            let fullText = '';
             let streamBuffer = '';
-            let jsonBuffer = '';
-            let pendingUsageText = '';
-            let hasDoneReasoningStep = false;
 
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
 
                 streamBuffer += decoder.decode(value, { stream: true });
-                const lines = streamBuffer.split('\n');
-                streamBuffer = lines.pop();
-                
-                for (const line of lines) {
-                    const trimmedLine = line.trim();
-                    if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
 
-                    const content = trimmedLine.substring(6);
-                    if (content === '[DONE]') {
-                        jsonBuffer = '';
+                while (true) {
+                    const separatorIndex = streamBuffer.indexOf('\n\n');
+                    if (separatorIndex === -1) break;
+
+                    const rawEvent = streamBuffer.slice(0, separatorIndex);
+                    streamBuffer = streamBuffer.slice(separatorIndex + 2);
+
+                    const payload = rawEvent
+                        .split('\n')
+                        .filter(line => line.startsWith('data:'))
+                        .map(line => line.slice(5).trim())
+                        .join('');
+
+                    if (!payload || payload === '[DONE]') {
                         continue;
                     }
 
-                    jsonBuffer += content;
+                    let data;
                     try {
-                        const data = JSON.parse(jsonBuffer);
-                        jsonBuffer = ''; // Reset on success
+                        data = JSON.parse(payload);
+                    } catch (err) {
+                        continue;
+                    }
 
-                        if (data.type === 'reasoning') {
-                            appendReasoning(data.text, data.streaming || false);
+                    if (data.type === 'reasoning') {
+                        appendReasoning(data, Boolean(data.streaming));
 
-                            const isDoneStep = !data.streaming && /^done\.?$/i.test((data.text || '').trim());
-                            if (isDoneStep) {
-                                hasDoneReasoningStep = true;
-                                if (pendingUsageText) {
-                                    appendReasoning(pendingUsageText);
-                                    pendingUsageText = '';
-                                }
-                            }
-                        } else if (data.type === 'content') {
-                            if (!assistantMessageDiv) {
-                                assistantMessageDiv = document.createElement('div');
-                                assistantMessageDiv.className = 'message assistant';
-                                assistantBubble = document.createElement('div');
-                                assistantBubble.className = 'bubble';
-                                assistantMessageDiv.appendChild(assistantBubble);
-                                messagesContainer.appendChild(assistantMessageDiv);
-                            }
-                            fullText += data.text;
-                            assistantBubble.innerHTML = formatText(fullText);
-                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                            
-                            // During streaming, highlight new blocks but don't tabify yet
-                            assistantBubble.querySelectorAll('pre code').forEach((block) => {
-                                if (!block.classList.contains('hljs')) {
-                                    try {
-                                        hljs.highlightElement(block);
-                                    } catch (e) {
-                                        // Ignore highlight errors during streaming
-                                    }
-                                }
-                            });
-                        } else if (data.type === 'status') {
-                            statusBadge.textContent = data.text;
-                            const statusClass = data.text.toLowerCase().replace(/\./g, '').replace(/\s+/g, '-');
-                            statusBadge.className = `status-badge ${statusClass}`;
-                        } else if (data.type === 'usage') {
-                            if (data.usage) {
-                                const total = data.usage.total_tokens || 0;
-                                const used = data.usage.completion_tokens || 0;
-                                const prompt = data.usage.prompt_tokens || 0;
-                                pendingUsageText = `Tokens used: ${total.toLocaleString()} (P: ${prompt.toLocaleString()}, C: ${used.toLocaleString()})`;
+                        const isDoneStep = !data.streaming && (
+                            String(data.action || '').toLowerCase() === 'done' ||
+                            /^done\.?$/i.test(String(data.text || '').trim())
+                        );
 
-                                if (hasDoneReasoningStep && pendingUsageText) {
-                                    appendReasoning(pendingUsageText);
-                                    pendingUsageText = '';
-                                }
+                        if (isDoneStep) {
+                            doneStepSeen = true;
+                            if (pendingUsageStep) {
+                                appendReasoning(pendingUsageStep);
+                                pendingUsageStep = null;
                             }
-                        } else if (data.type === 'error') {
-                            showToast(data.text, 'error');
-                            appendReasoning('Error: ' + data.text);
-                            statusBadge.textContent = 'Error';
-                            statusBadge.className = 'status-badge error';
                         }
-                    } catch (e) {
-                        // Incomplete JSON chunk or other error - keep buffering
+                    } else if (data.type === 'content') {
+                        if (!assistantMessageDiv) {
+                            assistantMessageDiv = document.createElement('div');
+                            assistantMessageDiv.className = 'message assistant';
+                            assistantBubble = createAssistantBubble('', new Date().toISOString());
+                            assistantTextDiv = document.createElement('div');
+                            assistantTextDiv.className = 'text-content';
+                            assistantBubble.appendChild(assistantTextDiv);
+                            assistantMessageDiv.appendChild(assistantBubble);
+                            appendMessageNode(assistantMessageDiv);
+                        }
+
+                        fullText += data.text || '';
+                        assistantBubble.dataset.rawText = fullText;
+                        assistantTextDiv.innerHTML = formatText(fullText);
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+                        assistantBubble.querySelectorAll('pre code').forEach((block) => {
+                            if (!block.classList.contains('hljs')) {
+                                try {
+                                    hljs.highlightElement(block);
+                                } catch (e) {
+                                    // Ignore highlight errors during streaming
+                                }
+                            }
+                        });
+                    } else if (data.type === 'status') {
+                        applyStatus(data.text || 'Working');
+                    } else if (data.type === 'usage') {
+                        if (data.usage) {
+                            const total = data.usage.total_tokens || 0;
+                            const completion = data.usage.completion_tokens || 0;
+                            const prompt = data.usage.prompt_tokens || 0;
+
+                            pendingUsageStep = {
+                                text: `Tokens used: ${total.toLocaleString()} (P: ${prompt.toLocaleString()}, C: ${completion.toLocaleString()})`,
+                                action: 'token_usage',
+                                resource: 'OpenAI usage',
+                                model: data.model || '',
+                                timestamp: data.timestamp || new Date().toISOString()
+                            };
+
+                            if (doneStepSeen) {
+                                appendReasoning(pendingUsageStep);
+                                pendingUsageStep = null;
+                            }
+                        }
+                    } else if (data.type === 'error') {
+                        const errorMessage = data.text || 'Unknown error';
+                        showToast(errorMessage, 'error');
+                        appendReasoning({
+                            text: 'Error: ' + errorMessage,
+                            action: 'error',
+                            resource: 'stream',
+                            timestamp: new Date().toISOString()
+                        });
+                        applyStatus('Error');
                     }
                 }
             }
 
-            if (pendingUsageText) {
-                appendReasoning(pendingUsageText);
+            if (pendingUsageStep) {
+                appendReasoning(pendingUsageStep);
             }
-            
-            // Finalize message: highlight and tabify
+
             if (assistantBubble) {
                 assistantBubble.querySelectorAll('pre code').forEach((block) => {
                     try {
@@ -1206,18 +1581,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 finalizeAssistantMessage(assistantBubble);
-                
-                // If it contains code, refresh the preview
+
                 if (assistantBubble.querySelector('.code-container')) {
                     refreshPreview();
                 }
             }
 
+            fetchSessions();
         } catch (err) {
-            console.error('Chat error', err);
-            showToast('Something went wrong. Please try again.', 'error');
-            statusBadge.textContent = 'Error';
-            statusBadge.className = 'status-badge error';
+            if (err.name === 'AbortError') {
+                appendReasoning({
+                    text: 'Generation stopped by user.',
+                    action: 'cancelled',
+                    resource: 'stream',
+                    timestamp: new Date().toISOString()
+                });
+                applyStatus('Stopped');
+                showToast('Generation stopped', 'info');
+            } else {
+                console.error('Chat error', err);
+                showToast('Something went wrong. Please try again.', 'error');
+                applyStatus('Error');
+            }
+        } finally {
+            currentStreamController = null;
+            hideGenerationUi();
         }
     }
 

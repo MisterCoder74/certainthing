@@ -29,6 +29,7 @@ if (!isset($_SESSION['user_id'])) {
                 <button id="reasoning-toggle-header" class="btn-small" title="Toggle reasoning pane">🧠</button>
                 <div class="user-menu">
                     <span class="user-email"><?php echo htmlspecialchars($_SESSION['user_email']); ?></span>
+                    <button id="api-key-btn" class="btn-small" type="button" title="Manage OpenAI API key">🔑 API Key</button>
                     <a href="auth/logout.php" class="logout-btn">Logout</a>
                 </div>
             </div>
@@ -71,6 +72,11 @@ if (!isset($_SESSION['user_id'])) {
                                 Hello! I'm CertainThing. I can help you build web projects. What are we building today?
                             </div>
                         </div>
+                        <div class="message-spinner" id="message-spinner" aria-live="polite" aria-hidden="true">
+                            <span class="message-spinner-dot"></span>
+                            <span class="message-spinner-dot"></span>
+                            <span class="message-spinner-dot"></span>
+                        </div>
                     </div>
                     <div class="input-area">
                         <div id="attachment-preview" class="attachment-preview"></div>
@@ -80,6 +86,7 @@ if (!isset($_SESSION['user_id'])) {
                                 <textarea id="chat-input" placeholder="Describe what you want to build..." rows="1"></textarea>
                                 <div class="input-actions">
                                     <button type="button" id="attach-btn" title="Attach file">📎</button>
+                                    <button type="button" id="stop-btn" class="stop-btn" title="Stop generation">Stop</button>
                                     <button type="submit" id="send-btn">Send</button>
                                 </div>
                             </div>
@@ -112,6 +119,22 @@ if (!isset($_SESSION['user_id'])) {
 
         <!-- Toast Notifications -->
         <div id="toast-container"></div>
+
+        <div id="api-key-modal" class="modal-overlay api-key-modal hidden" role="dialog" aria-modal="true" aria-labelledby="api-key-modal-title">
+            <div class="modal-content">
+                <h3 id="api-key-modal-title">OpenAI API Key</h3>
+                <p class="api-key-help">Store your key securely on the server for chat requests.</p>
+                <div class="form-group">
+                    <label for="openai-api-key-input">API Key</label>
+                    <input type="password" id="openai-api-key-input" placeholder="sk-..." autocomplete="off">
+                </div>
+                <div class="api-key-status" id="api-key-status"></div>
+                <div class="modal-footer">
+                    <button class="btn-small" type="button" id="api-key-cancel">Cancel</button>
+                    <button class="btn-primary" type="button" id="api-key-save">Save Key</button>
+                </div>
+            </div>
+        </div>
 
         <footer class="main-footer">
             &copy; <?php echo date('Y'); ?> CertainThing AI Assistant. All rights reserved.
