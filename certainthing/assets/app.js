@@ -23,6 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const reasoningToggleHeader = document.getElementById('reasoning-toggle-header');
     const reasoningTogglePane = document.getElementById('reasoning-toggle-pane');
     const rightPane = document.getElementById('reasoning-pane');
+    const paneTabBtns = document.querySelectorAll('.pane-tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const previewIframe = document.getElementById('preview-iframe');
+    const refreshPreviewBtn = document.getElementById('refresh-preview-btn');
     
     let currentSessionId = localStorage.getItem('certainthing_session_id') || 'sess_' + Date.now();
     localStorage.setItem('certainthing_session_id', currentSessionId);
@@ -56,6 +60,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     reasoningTogglePane.addEventListener('click', () => {
         rightPane.classList.remove('show-reasoning');
+    });
+
+    // Pane Tabs
+    paneTabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab;
+            paneTabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            btn.classList.add('active');
+            document.getElementById(`${tabId}-container`).classList.add('active');
+
+            if (tabId === 'preview') {
+                refreshPreview();
+            }
+        });
+    });
+
+    refreshPreviewBtn.addEventListener('click', () => {
+        refreshPreview();
     });
 
     // Close reasoning pane on escape
@@ -350,6 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.messages.forEach(msg => {
                     appendMessage(msg.role, msg.content, msg.attachments || []);
                 });
+                refreshPreview();
             } else {
                 // Empty session, show welcome
                 appendMessage('assistant', "Hello! I'm CertainThing. I can help you build web projects. What are we building today?");
@@ -678,6 +703,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 tabContainer.appendChild(exportBtn);
 
+                // Add GitHub Deploy button
+                const githubBtn = document.createElement('button');
+                githubBtn.className = 'github-deploy-btn';
+                githubBtn.innerHTML = '<span><svg height="16" viewBox="0 0 16 16" width="16" style="fill:currentColor;vertical-align:middle;margin-right:4px;"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg></span> Push to GitHub';
+                githubBtn.addEventListener('click', () => {
+                    const files = group.map(c => ({
+                        name: c.dataset.file || 'unnamed_file',
+                        content: c.querySelector('code').textContent
+                    }));
+                    openGitHubModal(files);
+                });
+                tabContainer.appendChild(githubBtn);
+
                 // Replace the first container in the group with the new tabContainer
                 const first = group[0];
                 first.parentNode.insertBefore(tabContainer, first);
@@ -782,6 +820,172 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error('Export error', err);
             showToast('Failed to export ZIP', 'error');
+        }
+    }
+
+    // =============================================
+    // GitHub Integration
+    // =============================================
+    function openGitHubModal(files) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal-content';
+        modal.innerHTML = `
+            <h3>Push to GitHub</h3>
+            <p style="font-size: 0.85rem; color: var(--reasoning-text); margin-bottom: 1.5rem;">
+                This will create a new commit with ${files.length} file(s).
+            </p>
+            <div class="form-group">
+                <label>Repository (user/repo)</label>
+                <input type="text" id="gh-repo" placeholder="e.g. octocat/hello-world" value="${localStorage.getItem('ct_gh_repo') || ''}">
+            </div>
+            <div class="form-group">
+                <label>Personal Access Token (PAT)</label>
+                <input type="password" id="gh-pat" placeholder="ghp_xxxxxxxxxxxx" value="${localStorage.getItem('ct_gh_pat') || ''}">
+            </div>
+            <div class="form-group">
+                <label>Branch</label>
+                <input type="text" id="gh-branch" value="main">
+            </div>
+            <div class="form-group">
+                <label>Commit Message</label>
+                <input type="text" id="gh-message" value="Deploy from CertainThing">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-small" id="gh-cancel">Cancel</button>
+                <button class="btn-primary" id="gh-push" style="margin-top: 0; width: auto; padding: 0.5rem 1.5rem;">Push Commit</button>
+            </div>
+        `;
+        
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        
+        modal.querySelector('#gh-cancel').onclick = () => overlay.remove();
+        
+        modal.querySelector('#gh-push').onclick = async () => {
+            const repo = modal.querySelector('#gh-repo').value.trim();
+            const pat = modal.querySelector('#gh-pat').value.trim();
+            const branch = modal.querySelector('#gh-branch').value.trim();
+            const message = modal.querySelector('#gh-message').value.trim();
+            
+            if (!repo || !pat || !branch) {
+                showToast('Please fill all required fields', 'error');
+                return;
+            }
+
+            // Save to localStorage for convenience (PAT should be handled carefully but as per ticket we can store for duration or use caution)
+            localStorage.setItem('ct_gh_repo', repo);
+            localStorage.setItem('ct_gh_pat', pat);
+
+            const pushBtn = modal.querySelector('#gh-push');
+            pushBtn.disabled = true;
+            pushBtn.textContent = 'Pushing...';
+
+            try {
+                const response = await fetch('api/github_push.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ repo, pat, branch, message, files })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Successfully pushed to GitHub!', 'success');
+                    overlay.remove();
+                    // Optional: add a message to the chat
+                    appendMessage('assistant', `Successfully pushed to GitHub repository **${repo}**! [View Commit](${result.view_url})`);
+                } else {
+                    throw new Error(result.error || 'GitHub push failed');
+                }
+            } catch (err) {
+                console.error('GitHub push error', err);
+                showToast(err.message, 'error');
+                pushBtn.disabled = false;
+                pushBtn.textContent = 'Push Commit';
+            }
+        };
+    }
+
+    // =============================================
+    // Preview Engine
+    // =============================================
+    function refreshPreview() {
+        const assistantMessages = messagesContainer.querySelectorAll('.message.assistant');
+        if (assistantMessages.length === 0) return;
+
+        const lastMessage = assistantMessages[assistantMessages.length - 1];
+        const codeBlocks = lastMessage.querySelectorAll('.code-container code, .code-pane code');
+        
+        if (codeBlocks.length === 0) return;
+
+        const files = {};
+        codeBlocks.forEach(code => {
+            const container = code.closest('.code-container, .code-pane');
+            const filename = container.dataset.file || '';
+            const lang = container.dataset.lang || '';
+            
+            if (filename) {
+                files[filename] = code.textContent;
+            } else {
+                if (lang === 'html') files['index.html'] = code.textContent;
+                else if (lang === 'css') files['style.css'] = code.textContent;
+                else if (lang === 'javascript') files['script.js'] = code.textContent;
+            }
+        });
+
+        let html = files['index.html'] || '';
+        if (!html) {
+            const htmlFile = Object.keys(files).find(f => f.endsWith('.html'));
+            if (htmlFile) html = files[htmlFile];
+            else {
+                for (const code of codeBlocks) {
+                    if (code.closest('.code-container, .code-pane').dataset.lang === 'html') {
+                        html = code.textContent;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!html) {
+            previewIframe.srcdoc = '<html><body><p style="color: #666; font-family: sans-serif; padding: 20px;">No HTML found to preview. Try asking the AI to build an HTML page.</p></body></html>';
+            return;
+        }
+
+        // Inline CSS and JS
+        Object.keys(files).forEach(filename => {
+            if (filename.endsWith('.css')) {
+                const css = files[filename];
+                const regex = new RegExp(`<link[^>]+href=["'\\s]*${filename}["'\\s]*[^>]*>`, 'gi');
+                if (html.match(regex)) {
+                    html = html.replace(regex, `<style>${css}</style>`);
+                } else if (html.includes('</head>')) {
+                    html = html.replace('</head>', `<style>${css}</style></head>`);
+                } else {
+                    html += `<style>${css}</style>`;
+                }
+            } else if (filename.endsWith('.js')) {
+                const js = files[filename];
+                const regex = new RegExp(`<script[^>]+src=["'\\s]*${filename}["'\\s]*[^>]*><\/script>`, 'gi');
+                if (html.match(regex)) {
+                    html = html.replace(regex, `<script>${js}<\/script>`);
+                } else if (html.includes('</body>')) {
+                    html = html.replace('</body>', `<script>${js}<\/script></body>`);
+                } else {
+                    html += `<script>${js}</script>`;
+                }
+            }
+        });
+
+        previewIframe.srcdoc = html;
+        
+        // Update URL indicator
+        const urlIndicator = document.querySelector('.preview-url');
+        if (urlIndicator) {
+            const activeFile = Object.keys(files).find(f => f.endsWith('.html')) || 'index.html';
+            urlIndicator.textContent = 'sandbox://' + activeFile;
         }
     }
 
@@ -898,6 +1102,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 finalizeAssistantMessage(assistantBubble);
+                
+                // If it contains code, refresh the preview
+                if (assistantBubble.querySelector('.code-container')) {
+                    refreshPreview();
+                }
             }
 
         } catch (err) {
