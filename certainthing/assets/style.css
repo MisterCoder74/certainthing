@@ -280,6 +280,7 @@ body, html {
     border-radius: 12px;
     line-height: 1.5;
     word-wrap: break-word;
+    min-width: 0;
 }
 
 .message-attachments {
@@ -312,6 +313,11 @@ body, html {
     background-color: var(--user-bubble);
     color: white;
     border-bottom-right-radius: 2px;
+}
+
+.text-content {
+    min-width: 0;
+    overflow-wrap: break-word;
 }
 
 .assistant .bubble {
@@ -530,6 +536,8 @@ body, html {
     border-radius: 8px;
     background-color: var(--bg-color);
     overflow: hidden;
+    max-width: 100%;
+    width: 100%;
 }
 
 .code-header {
@@ -896,6 +904,22 @@ code {
     display: flex;
     align-items: center;
     line-height: 1;
+    z-index: 1001;
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+}
+
+.sidebar-overlay.active {
+    display: block;
 }
 
 .sidebar-toggle-btn:hover {
@@ -1032,10 +1056,11 @@ code {
 
     .sidebar {
         position: fixed;
-        top: 60px;
+        top: 0;
         left: 0;
-        height: calc(100vh - 60px);
-        z-index: 100;
+        height: 100vh;
+        z-index: 1000;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.5);
     }
 
     .sidebar.collapsed {

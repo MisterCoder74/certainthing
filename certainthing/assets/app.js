@@ -20,9 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const sessionList = document.getElementById('session-list');
     const sessionSearch = document.getElementById('session-search');
     const sessionCount = document.getElementById('session-count');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
     const reasoningToggleHeader = document.getElementById('reasoning-toggle-header');
     const reasoningTogglePane = document.getElementById('reasoning-toggle-pane');
     const rightPane = document.getElementById('reasoning-pane');
+    const tokenUsageDisplay = document.getElementById('token-usage');
     const paneTabBtns = document.querySelectorAll('.pane-tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     const previewIframe = document.getElementById('preview-iframe');
@@ -43,8 +45,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // =============================================
     sidebarToggle.addEventListener('click', () => {
         sessionSidebar.classList.toggle('collapsed');
+        if (sidebarOverlay) {
+            if (!sessionSidebar.classList.contains('collapsed') && window.innerWidth <= 830) {
+                sidebarOverlay.classList.add('active');
+            } else {
+                sidebarOverlay.classList.remove('active');
+            }
+        }
         localStorage.setItem('certainthing_sidebar_collapsed', sessionSidebar.classList.contains('collapsed'));
     });
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', () => {
+            sessionSidebar.classList.add('collapsed');
+            sidebarOverlay.classList.remove('active');
+            localStorage.setItem('certainthing_sidebar_collapsed', 'true');
+        });
+    }
 
     // Restore sidebar state
     if (localStorage.getItem('certainthing_sidebar_collapsed') === 'true') {
@@ -611,14 +628,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         // Newlines (replacing \n with <br> in non-code parts)
-        escaped = escaped.replace(/\n/g, '<br>');
+        let html = escaped.replace(/\n/g, '<br>');
         
         // Restore blocks
         blocks.forEach((blockHtml, index) => {
-            escaped = escaped.replace(`__BLOCK_${index}__`, blockHtml);
+            html = html.replace(`__BLOCK_${index}__`, () => blockHtml);
         });
         
-        return escaped;
+        return sanitizeHtml(html);
+    }
+
+    function sanitizeHtml(html) {
+        if (!html) return '';
+        // Use DOMParser to fix malformed HTML and close tags
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        // Prevent script execution by removing script tags if any (though they should be escaped)
+        const scripts = doc.querySelectorAll('script');
+        scripts.forEach(s => s.remove());
+        return doc.body.innerHTML;
     }
 
     function finalizeAssistantMessage(bubble) {
@@ -1036,6 +1063,10 @@ document.addEventListener('DOMContentLoaded', () => {
         statusBadge.textContent = 'Thinking...';
         statusBadge.className = 'status-badge thinking';
         reasoningContainer.innerHTML = '';
+        if (tokenUsageDisplay) {
+            tokenUsageDisplay.style.display = 'none';
+            tokenUsageDisplay.textContent = '';
+        }
 
         const formData = new FormData();
         formData.append('message', message);
@@ -1103,6 +1134,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                 statusBadge.textContent = data.text;
                                 const statusClass = data.text.toLowerCase().replace(/\./g, '').replace(/\s+/g, '-');
                                 statusBadge.className = `status-badge ${statusClass}`;
+                            } else if (data.type === 'usage') {
+                                if (tokenUsageDisplay && data.usage) {
+                                    const total = data.usage.total_tokens || 0;
+                                    const used = data.usage.completion_tokens || 0;
+                                    const prompt = data.usage.prompt_tokens || 0;
+                                    // o3-mini has 100k+ limit, but we can just show used/total if we want or just the counts
+                                    tokenUsageDisplay.textContent = `Tokens: ${total.toLocaleString()} (P: ${prompt.toLocaleString()}, C: ${used.toLocaleString()})`;
+                                    tokenUsageDisplay.style.display = 'block';
+                                }
                             } else if (data.type === 'error') {
                                 showToast(data.text, 'error');
                                 appendReasoning('Error: ' + data.text);
