@@ -135,7 +135,7 @@ send_event('reasoning', 'Connecting to OpenAI...');
 $ch = curl_init('https://api.openai.com/v1/chat/completions');
 
 $post_data = [
-    'model' => 'o3-mini', // Upgraded to o3-mini for real thinking tokens
+    'model' => 'gpt-5-nano', // Upgraded to gpt-5-nano for real thinking tokens
     'messages' => $messages,
     'stream' => true,
     'stream_options' => ['include_usage' => true],
