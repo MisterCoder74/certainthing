@@ -17,10 +17,12 @@ foreach ($session_files as $file) {
     $data = safe_read_json($file);
     if (empty($data)) continue;
 
-    // Extract session_id from filename: user_id_sess_xxx.json
+    // Extract session_id from filename: {user_id}_{session_id}.json
     $filename = basename($file, '.json');
-    $parts = explode('_', $filename, 2);
-    $session_id = $parts[1] ?? '';
+    $prefix = $user_id . '_';
+    $session_id = strpos($filename, $prefix) === 0
+        ? substr($filename, strlen($prefix))
+        : '';
 
     $messages = $data['messages'] ?? [];
     // Find the first user message as a title

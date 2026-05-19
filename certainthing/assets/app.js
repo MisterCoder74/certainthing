@@ -237,23 +237,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // =============================================
     async function startNewChat() {
         const newSessionId = 'sess_' + Date.now();
+        const nowIso = new Date().toISOString();
+
         currentSessionId = newSessionId;
         localStorage.setItem('certainthing_session_id', currentSessionId);
         messagesContainer.innerHTML = '';
         reasoningContainer.innerHTML = '';
         appendMessage('assistant', "New session started! How can I help?");
-        
-        // Create placeholder session file so it appears in sidebar immediately
+
+        // Optimistically show the new session immediately in the sidebar
+        allSessions = allSessions.filter(session => session.session_id !== newSessionId);
+        allSessions.unshift({
+            session_id: newSessionId,
+            title: 'Untitled',
+            created_at: nowIso,
+            updated_at: nowIso,
+            message_count: 0
+        });
+        renderSessions(allSessions);
+        updateSessionCount();
+
+        // Create placeholder session file so it appears in sidebar immediately on refresh too
         try {
-            await fetch('api/create_session.php', {
+            const response = await fetch('api/create_session.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ session_id: newSessionId })
             });
+
+            if (!response.ok) {
+                throw new Error('Failed to create session placeholder');
+            }
         } catch (err) {
             console.error('Failed to create session placeholder', err);
+            showToast('New chat created locally but failed to persist session file', 'error');
         }
-        
+
         showToast('New session started', 'info');
         fetchSessions();
     }
@@ -1103,6 +1122,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let fullText = '';
             let streamBuffer = '';
             let jsonBuffer = '';
+            let pendingUsageText = '';
+            let hasDoneReasoningStep = false;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -1129,6 +1150,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         if (data.type === 'reasoning') {
                             appendReasoning(data.text, data.streaming || false);
+
+                            const isDoneStep = !data.streaming && /^done\.?$/i.test((data.text || '').trim());
+                            if (isDoneStep) {
+                                hasDoneReasoningStep = true;
+                                if (pendingUsageText) {
+                                    appendReasoning(pendingUsageText);
+                                    pendingUsageText = '';
+                                }
+                            }
                         } else if (data.type === 'content') {
                             if (!assistantMessageDiv) {
                                 assistantMessageDiv = document.createElement('div');
@@ -1161,7 +1191,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const total = data.usage.total_tokens || 0;
                                 const used = data.usage.completion_tokens || 0;
                                 const prompt = data.usage.prompt_tokens || 0;
-                                appendReasoning(`Done. Tokens used: ${total.toLocaleString()} (P: ${prompt.toLocaleString()}, C: ${used.toLocaleString()})`);
+                                pendingUsageText = `Tokens used: ${total.toLocaleString()} (P: ${prompt.toLocaleString()}, C: ${used.toLocaleString()})`;
+
+                                if (hasDoneReasoningStep && pendingUsageText) {
+                                    appendReasoning(pendingUsageText);
+                                    pendingUsageText = '';
+                                }
                             }
                         } else if (data.type === 'error') {
                             showToast(data.text, 'error');
@@ -1173,6 +1208,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Incomplete JSON chunk or other error - keep buffering
                     }
                 }
+            }
+
+            if (pendingUsageText) {
+                appendReasoning(pendingUsageText);
             }
             
             // Finalize message: highlight and tabify
