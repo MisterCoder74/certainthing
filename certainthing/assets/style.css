@@ -760,11 +760,11 @@ code {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: margin-left 0.3s ease, width 0.3s ease;
+    transition: transform 0.3s ease, width 0.3s ease;
 }
 
 .sidebar.collapsed {
-    margin-left: -260px;
+    transform: translateX(-100%);
     width: 0;
     min-width: 0;
     border-right: none;
@@ -1064,7 +1064,7 @@ code {
     }
 
     .sidebar.collapsed {
-        margin-left: -260px;
+        transform: translateX(-100%);
     }
 
     .split-container {
@@ -1091,7 +1091,7 @@ code {
     }
 
     .sidebar.collapsed {
-        margin-left: -220px;
+        transform: translateX(-100%);
     }
 
     .user-email {
