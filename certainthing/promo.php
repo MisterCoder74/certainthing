@@ -1,410 +1,192 @@
 <?php
-require_once __DIR__ . '/api/config.php';
+/**
+ * CertainThing Promo Page
+ * Dark themed landing page following the project's design guidelines.
+ */
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CertainThing - The AI-Powered Vibe Coder</title>
-    <link rel="stylesheet" href="assets/style.css?v=<?php echo time(); ?>">
+    <title>CertainThing - AI-Powered Vibe Coding</title>
     <style>
         :root {
-            --landing-accent: #58a6ff;
-            --hero-bg: #0d1117;
-            --section-padding: 5rem 2rem;
+            --bg-color: #0d1117;
+            --text-color: #c9d1d9;
+            --accent-color: #58a6ff;
+            --border-color: #30363d;
+            --secondary-bg: #161b22;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
             scroll-behavior: smooth;
         }
 
-        /* Navigation */
-        .promo-nav {
+        a {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        a:hover {
+            text-decoration: underline;
+            opacity: 0.8;
+        }
+
+        nav {
             position: sticky;
             top: 0;
-            background-color: rgba(22, 27, 34, 0.8);
-            backdrop-filter: blur(10px);
+            background-color: rgba(13, 17, 23, 0.9);
+            backdrop-filter: blur(8px);
             border-bottom: 1px solid var(--border-color);
-            z-index: 1000;
-            padding: 0.75rem 2rem;
+            padding: 1rem 2rem;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .promo-nav .logo {
-            text-decoration: none;
-            color: var(--text-color);
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--reasoning-text);
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-
-        .nav-links a:hover {
-            color: var(--accent-color);
-        }
-
-        /* Hero Section */
-        .hero {
-            padding: 8rem 2rem;
-            text-align: center;
-            background: radial-gradient(circle at center, #1f6feb22 0%, var(--bg-color) 70%);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .hero h1 {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            letter-spacing: -0.02em;
-        }
-
-        .hero .tagline {
-            font-size: 1.5rem;
-            color: var(--reasoning-text);
-            max-width: 800px;
-            margin: 0 auto 2.5rem;
-        }
-
-        .cta-button {
-            display: inline-block;
-            padding: 1rem 2.5rem;
-            background-color: var(--success-color);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 1.1rem;
-            transition: transform 0.2s, filter 0.2s;
-        }
-
-        .cta-button:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.1);
-        }
-
-        /* Sections */
-        .section-container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: var(--section-padding);
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 3rem;
-        }
-
-        /* Philosophy Grid */
-        .philosophy-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            justify-content: center;
             gap: 2rem;
+            z-index: 1000;
         }
 
-        .card {
-            background-color: var(--pane-bg);
-            border: 1px solid var(--border-color);
-            padding: 2rem;
-            border-radius: 12px;
-            transition: border-color 0.3s;
+        nav a {
+            font-weight: 500;
+            font-size: 0.95rem;
         }
 
-        .card:hover {
-            border-color: var(--accent-color);
+        section {
+            padding: 5rem 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .card h3 {
+        section:last-of-type {
+            border-bottom: none;
+        }
+
+        h1, h2, h3 {
             color: var(--accent-color);
             margin-top: 0;
-            margin-bottom: 1rem;
         }
 
-        .card p {
-            line-height: 1.6;
-            color: var(--reasoning-text);
-            margin-bottom: 0;
+        .centered {
+            text-align: center;
         }
 
-        /* Features List */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .feature-item {
-            display: flex;
-            gap: 1rem;
-            align-items: flex-start;
-            background-color: var(--bg-color);
-            border: 1px solid var(--border-color);
-            padding: 1.5rem;
-            border-radius: 8px;
-        }
-
-        .feature-item .icon {
-            color: var(--accent-color);
-            font-size: 1.5rem;
-        }
-
-        .feature-content h4 {
-            margin: 0 0 0.5rem;
-        }
-
-        .feature-content p {
-            margin: 0;
-            font-size: 0.95rem;
-            color: var(--reasoning-text);
-        }
-
-        /* Demo Section */
-        .demo-box {
+        .features-image {
+            max-width: 900px;
             width: 100%;
-            aspect-ratio: 16 / 9;
-            background-color: #000;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-
-        .demo-placeholder {
-            text-align: center;
-        }
-
-        .demo-placeholder .icon {
-            font-size: 4rem;
-            color: var(--accent-color);
-            margin-bottom: 1rem;
+            height: auto;
             display: block;
-        }
-
-        /* Doc Section */
-        .doc-section {
-            background-color: var(--pane-bg);
-            text-align: center;
-            border-top: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .doc-link {
-            color: var(--accent-color);
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 1.2rem;
-            border: 1px solid var(--accent-color);
-            padding: 0.75rem 2rem;
+            margin: 2rem auto;
             border-radius: 6px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .btn {
             display: inline-block;
-            transition: all 0.2s;
-        }
-
-        .doc-link:hover {
-            background-color: var(--accent-color);
+            background-color: #238636;
             color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            margin-top: 1rem;
         }
 
-        /* Buy Section */
-        .buy-section {
-            text-align: center;
+        .btn:hover {
+            background-color: #2ea043;
+            text-decoration: none;
         }
 
-        .price-card {
-            max-width: 400px;
-            margin: 0 auto;
-            border: 2px solid var(--success-color);
-        }
-
-        .price-tag {
-            font-size: 3rem;
-            font-weight: bold;
-            margin: 1.5rem 0;
-        }
-
-        .price-tag span {
-            font-size: 1rem;
-            color: var(--reasoning-text);
-        }
-
-        /* Footer */
-        .promo-footer {
+        footer {
             padding: 4rem 2rem;
             text-align: center;
+            background-color: var(--secondary-bg);
             border-top: 1px solid var(--border-color);
-            background-color: var(--bg-color);
-            color: var(--reasoning-text);
+            color: #8b949e;
+            font-size: 0.9rem;
         }
 
-        .promo-footer a {
-            color: var(--accent-color);
-            text-decoration: none;
+        footer p {
+            margin: 0.5rem 0;
         }
 
-        .promo-footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Responsivity */
+        /* Responsive Breakpoints */
         @media (max-width: 830px) {
-            .hero h1 { font-size: 3rem; }
-            .nav-links { display: none; }
-            .features-grid { grid-template-columns: 1fr; }
+            section { padding: 3rem 1.5rem; }
+            nav { gap: 1rem; padding: 1rem; }
         }
 
         @media (max-width: 430px) {
-            .hero h1 { font-size: 2.2rem; }
-            .hero .tagline { font-size: 1.1rem; }
-            .section-padding { padding: 3rem 1rem; }
+            nav { flex-wrap: wrap; justify-content: center; }
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.5rem; }
         }
     </style>
 </head>
 <body>
-    <nav class="promo-nav">
-        <a href="#" class="logo">
-            <span class="icon">✦</span> CertainThing
-        </a>
-        <div class="nav-links">
-            <a href="#philosophy">Philosophy</a>
-            <a href="#features">Features</a>
-            <a href="#demo">Demo</a>
-            <a href="#doc">Doc</a>
-            <a href="#buy">Buy</a>
-        </div>
-        <a href="login.php" class="btn-small" style="text-decoration:none; padding: 0.4rem 1rem;">Login</a>
+
+    <nav>
+        <a href="#philosophy">Philosophy</a>
+        <a href="#features">Features</a>
+        <a href="#demo">Demo</a>
+        <a href="#doc">Doc</a>
+        <a href="#buy">Buy</a>
     </nav>
 
-    <header class="hero">
-        <div class="section-container">
-            <h1>The <span style="color: var(--accent-color)">vibe coder</span> assistant</h1>
-            <p class="tagline">Describe what you want to build in plain language, via images, files, or URLs — and get working code back in real-time.</p>
-            <a href="register.php" class="cta-button">Get Started for Free</a>
-        </div>
-    </header>
+    <section id="philosophy">
+        <h1>Philosophy</h1>
+        <p>CertainThing is built on the belief that coding should be as intuitive as a conversation. We call it "Vibe Coding" — where your creative intent is the primary driver, and the AI handles the heavy lifting of implementation. Our goal is to bridge the gap between imagination and functional software, allowing you to iterate at the speed of thought.</p>
+    </section>
 
-    <section id="philosophy" class="section-container">
-        <h2 class="section-title">Philosophy</h2>
-        <div class="philosophy-grid">
-            <div class="card">
-                <h3>Conversational-first</h3>
-                <p>No complex forms or configurations. Everything happens through a simple, intuitive chat interface.</p>
-            </div>
-            <div class="card">
-                <h3>Transparent reasoning</h3>
-                <p>Watch the AI "think" in real-time. Our reasoning pane shows you every planning step before a single line of code is written.</p>
-            </div>
-            <div class="card">
-                <h3>Multimodal input</h3>
-                <p>Provide context however you like. Text descriptions, UI mockups, existing source files, or even live website URLs.</p>
-            </div>
-            <div class="card">
-                <h3>Iterative Design</h3>
-                <p>Every output is a starting point. Refine, extend, and request changes naturally until your vision is perfect.</p>
-            </div>
+    <section id="features">
+        <h2>Features</h2>
+        <p>Experience a new way of building applications with our core suite of AI-powered tools:</p>
+        <ul style="padding-left: 1.5rem;">
+            <li><strong>Conversational Chat:</strong> Describe your app in plain English.</li>
+            <li><strong>Reasoning Pane:</strong> Watch the AI plan its steps in real-time for full transparency.</li>
+            <li><strong>Multimodal Input:</strong> Upload images, PDFs, or paste URLs for deep context understanding.</li>
+            <li><strong>One-Click Deploy:</strong> Go from concept to live app instantly.</li>
+        </ul>
+        <img src="certainthing_05-20-2026_01.jpg" alt="CertainThing Features Preview" class="features-image">
+    </section>
+
+    <section id="demo" class="centered">
+        <h2>Demo</h2>
+        <p>Watch how CertainThing transforms a simple prompt into a multi-page application.</p>
+        <div style="background: #000; height: 400px; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 2rem;">
+            <p style="color: #8b949e;">[Interactive Demo Video Placeholder]</p>
         </div>
     </section>
 
-    <section id="features" style="background-color: var(--pane-bg); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
-        <div class="section-container">
-            <h2 class="section-title">Core Features</h2>
-            <div class="features-grid">
-                <div class="feature-item">
-                    <span class="icon">💬</span>
-                    <div class="feature-content">
-                        <h4>Streaming Chat Interface</h4>
-                        <p>Real-time conversational input with instant streaming AI responses.</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <span class="icon">🧠</span>
-                    <div class="feature-content">
-                        <h4>Live Reasoning Pane</h4>
-                        <p>A dedicated trace of the AI's planning steps, providing full transparency into its process.</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <span class="icon">💻</span>
-                    <div class="feature-content">
-                        <h4>Advanced Code Renderer</h4>
-                        <p>Syntax-highlighted, tabbed, and copyable code output for multi-file projects.</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <span class="icon">🖼️</span>
-                    <div class="feature-content">
-                        <h4>Multimodal Understanding</h4>
-                        <p>Analyzes images, PDFs, and code files to understand your requirements deeply.</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <span class="icon">🌐</span>
-                    <div class="feature-content">
-                        <h4>Website Analyzer</h4>
-                        <p>Paste a URL and CertainThing will scrape and analyze it to use as context for your build.</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <span class="icon">🚀</span>
-                    <div class="feature-content">
-                        <h4>One-Click Deploy</h4>
-                        <p>Deploy your generated application to a dedicated folder instantly.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <section id="doc">
+        <h2>Documentation</h2>
+        <p>Our comprehensive technical documentation covers everything from the folder structure to advanced prompt engineering.</p>
+        <p>Learn how to use the Website Analyzer to scrape existing sites for context, or how to manage sessions with our JSON-based persistence layer.</p>
+        <p><a href="doc.html">Explore the Docs &rarr;</a></p>
     </section>
 
-    <section id="demo" class="section-container">
-        <h2 class="section-title">See it in Action</h2>
-        <div class="demo-box">
-            <div class="demo-placeholder">
-                <span class="icon">✦</span>
-                <h3>CertainThing Demo</h3>
-                <p style="color: var(--reasoning-text)">Interactive demo coming soon</p>
-            </div>
-        </div>
+    <section id="buy" class="centered">
+        <h2>Join the Beta</h2>
+        <p>CertainThing is currently in early access. Be among the first to experience the future of AI-assisted development.</p>
+        <a href="register.php" class="btn">Create Your Free Account</a>
     </section>
 
-    <section id="doc" class="doc-section">
-        <div class="section-container">
-            <h2 class="section-title">Documentation</h2>
-            <p class="tagline" style="margin-bottom: 2.5rem;">Learn everything about CertainThing, from basic usage to advanced multimodal prompts.</p>
-            <a href="doc.html" class="doc-link">Read the Docs</a>
-        </div>
-    </section>
-
-    <section id="buy" class="section-container buy-section">
-        <h2 class="section-title">Join the Beta</h2>
-        <div class="card price-card">
-            <h3>Early Access</h3>
-            <div class="price-tag">$0 <span>/ month</span></div>
-            <p style="margin-bottom: 2rem;">Help us shape the future of vibe coding. Join our open beta today.</p>
-            <a href="register.php" class="cta-button" style="width: 100%;">Create Account</a>
-        </div>
-    </section>
-
-    <footer class="promo-footer">
-        <div class="section-container" style="padding: 0;">
-            <p>&copy; <?php echo date('Y'); ?> <span class="icon">✦</span> CertainThing</p>
-            <p style="margin-top: 1rem; font-size: 0.85rem;">
-                Built by <a href="https://vivacity.design" target="_blank">VIVACITY DESIGN AI DIVISION</a>
-            </p>
-        </div>
+    <footer>
+        <p>VIVACITY DESIGN AI DIVISION</p>
+        <p><a href="index.html">index.html</a></p>
+        <p><?php echo date('Y'); ?></p>
     </footer>
+
 </body>
 </html>
