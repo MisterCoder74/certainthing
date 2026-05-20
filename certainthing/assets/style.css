@@ -33,6 +33,7 @@ body, html {
 /* Auth Pages */
 .auth-page {
     display: flex;
+        flex-direction: column;
     justify-content: center;
     align-items: center;
     background-color: var(--bg-color);
@@ -177,13 +178,13 @@ body, html {
 }
 
 .left-pane {
-        max-width: 75%;
+        max-width: 60%;
     flex: 1;
     border-right: 1px solid var(--border-color);
 }
 
 .right-pane {
-    width: 600px;
+    width: 700px;
     background-color: var(--bg-color);
     transition: width 0.3s ease;
 }
