@@ -8,7 +8,6 @@ $data = json_decode(file_get_contents('php://input'), true);
 $repo = $data['repo'] ?? ''; // e.g., "username/repo"
 $pat = $data['pat'] ?? '';
 $files = $data['files'] ?? [];
-$branch = $data['branch'] ?? 'main';
 $message = $data['message'] ?? 'Deploy from CertainThing';
 
 if (empty($repo) || empty($pat) || empty($files)) {
@@ -40,15 +39,23 @@ function github_api($url, $pat, $method = 'GET', $post_data = null) {
     return ['status' => $status, 'data' => json_decode($response, true)];
 }
 
-// 1. Get the latest commit SHA of the branch
-$res = github_api("repos/$repo/git/refs/heads/$branch", $pat);
+// 1. Get the default branch of the repository
+$res = github_api("repos/$repo", $pat);
+if ($res['status'] !== 200) {
+    echo json_encode(['error' => 'Failed to get repository info: ' . ($res['data']['message'] ?? 'Unknown error')]);
+    exit;
+}
+$default_branch = $res['data']['default_branch'] ?? 'main';
+
+// 2. Get the latest commit SHA of the default branch
+$res = github_api("repos/$repo/git/refs/heads/$default_branch", $pat);
 if ($res['status'] !== 200) {
     echo json_encode(['error' => 'Failed to get branch reference: ' . ($res['data']['message'] ?? 'Unknown error')]);
     exit;
 }
 $base_commit_sha = $res['data']['object']['sha'];
 
-// 2. Get the tree SHA of the latest commit
+// 3. Get the tree SHA of the latest commit
 $res = github_api("repos/$repo/git/commits/$base_commit_sha", $pat);
 if ($res['status'] !== 200) {
     echo json_encode(['error' => 'Failed to get commit info: ' . ($res['data']['message'] ?? 'Unknown error')]);
@@ -56,7 +63,7 @@ if ($res['status'] !== 200) {
 }
 $base_tree_sha = $res['data']['tree']['sha'];
 
-// 3. Create a new Tree
+// 4. Create a new Tree
 $tree_data = [];
 foreach ($files as $file) {
     $tree_data[] = [
@@ -77,7 +84,7 @@ if ($res['status'] !== 201) {
 }
 $new_tree_sha = $res['data']['sha'];
 
-// 4. Create a new Commit
+// 5. Create a new Commit
 $res = github_api("repos/$repo/git/commits", $pat, 'POST', [
     'message' => $message,
     'tree' => $new_tree_sha,
@@ -89,8 +96,8 @@ if ($res['status'] !== 201) {
 }
 $new_commit_sha = $res['data']['sha'];
 
-// 5. Update the branch reference
-$res = github_api("repos/$repo/git/refs/heads/$branch", $pat, 'PATCH', [
+// 6. Update the default branch reference
+$res = github_api("repos/$repo/git/refs/heads/$default_branch", $pat, 'PATCH', [
     'sha' => $new_commit_sha,
     'force' => false
 ]);
