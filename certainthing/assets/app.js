@@ -791,7 +791,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function formatText(text) {
         if (!text) return '';
 
-        const input = String(text).replace(/\r\n/g, '\n');
+        // Ensure the input is a string and handle potential incomplete code blocks
+        let input = String(text).replace(/\r\n/g, '\n');
+        
+        // If there's an unclosed code block, close it to prevent rendering issues
+        const openFences = (input.match(/```/g) || []).length;
+        if (openFences % 2 !== 0) {
+            input += '\n```';
+        }
+
         const fenceRegex = /```([^\n`]*)\n?([\s\S]*?)```/g;
 
         let html = '';
@@ -1351,7 +1359,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.configured) {
                 const source = data.source === 'file' ? 'saved on server' : 'environment';
                 const masked = data.masked_key ? ` (${data.masked_key})` : '';
-                setApiKeyStatus(`API key configured via ${source}${masked}.`);
+                setApiKeyStatus(`API key configured.`);
             } else {
                 setApiKeyStatus('No API key saved. You can save one now.');
             }
@@ -1391,7 +1399,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             setApiKeyStatus(data.configured
-                ? `Saved successfully (${data.masked_key || 'masked'}).`
+                ? `Saved successfully.`
                 : 'Cleared saved key. Using environment fallback.');
             showToast('API key settings updated', 'success');
 
@@ -1626,3 +1634,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3500);
     }
 });
+
