@@ -15,7 +15,7 @@ if (isset($_SESSION['user_id'])) {
 </head>
 <body class="auth-page">
     <div class="auth-container">
-        <h1>CertainThing</h1>
+        <h1><span class="icon">✦</span> CertainThing</h1>
         <p class="tagline">The vibe coder assistant</p>
         
         <form action="auth/register_handler.php" method="POST" class="auth-form">
@@ -25,12 +25,12 @@ if (isset($_SESSION['user_id'])) {
             
             <div class="form-group">
                 <label for="email">Email</label>
-                <input type="email" id="email" name="email" required>
+                <input type="email" id="email" name="email" required autocomplete="off">
             </div>
             
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" required autocomplete="new-password">
             </div>
             
             <button type="submit" class="btn-primary">Register</button>
@@ -40,7 +40,7 @@ if (isset($_SESSION['user_id'])) {
     </div>
     
     <footer>
-        <p>&copy; <?php echo date('Y'); ?> CertainThing</p>
+        <p>&copy; <?php echo date('Y'); ?> <span class="icon">✦</span> CertainThing - by Vivacity Design AI Division</p>
     </footer>
 </body>
 </html>
