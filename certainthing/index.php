@@ -4,6 +4,14 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
 }
+
+// Process account control for active sessions (check expiry, send reminders)
+$current_user = process_account_control($_SESSION['user_id']);
+if ($current_user === null || ($current_user['status'] ?? 'enabled') !== 'enabled') {
+    session_destroy();
+    header('Location: login.php?error=Account disabled');
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
