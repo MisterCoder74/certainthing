@@ -48,6 +48,73 @@ function check_auth() {
         echo json_encode(['error' => 'Unauthorized']);
         exit;
     }
+
+    $users = safe_read_json(USERS_FILE);
+    foreach ($users as $user) {
+        if ($user['id'] === $_SESSION['user_id']) {
+            if (($user['status'] ?? 'enabled') !== 'enabled') {
+                session_destroy();
+                header('HTTP/1.1 403 Forbidden');
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Account disabled']);
+                exit;
+            }
+            return;
+        }
+    }
+
+    // User not found in users.json but has a session
+    session_destroy();
+    header('HTTP/1.1 401 Unauthorized');
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}
+
+/**
+ * Update user tier
+ */
+function update_user_tier($user_id, $new_tier) {
+    $users = safe_read_json(USERS_FILE);
+    $updated = false;
+    foreach ($users as &$user) {
+        if ($user['id'] === $user_id) {
+            $current_tier = $user['tier'] ?? 'free';
+            if ($current_tier !== $new_tier) {
+                $user['tier'] = $new_tier;
+                $user['last_tier_change_at'] = date('c');
+                $user['reminders_sent'] = []; // Reset reminders on tier change
+                $updated = true;
+            }
+            break;
+        }
+    }
+    if ($updated) {
+        return safe_write_json(USERS_FILE, $users);
+    }
+    return false;
+}
+
+/**
+ * Update user status
+ */
+function update_user_status($user_id, $new_status) {
+    $users = safe_read_json(USERS_FILE);
+    $updated = false;
+    foreach ($users as &$user) {
+        if ($user['id'] === $user_id) {
+            $current_status = $user['status'] ?? 'enabled';
+            if ($current_status !== $new_status) {
+                $user['status'] = $new_status;
+                $updated = true;
+            }
+            break;
+        }
+    }
+    if ($updated) {
+        return safe_write_json(USERS_FILE, $users);
+    }
+    return false;
 }
 
 /**

@@ -14,6 +14,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     foreach ($users as $user) {
         if ($user['email'] === $email && password_verify($password, $user['password_hash'])) {
+            if (($user['status'] ?? 'enabled') !== 'enabled') {
+                header('Location: ../login.php?error=Account disabled');
+                exit;
+            }
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_email'] = $user['email'];
             header('Location: ../index.php');

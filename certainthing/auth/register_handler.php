@@ -24,7 +24,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'email' => $email,
         'password_hash' => password_hash($password, PASSWORD_BCRYPT),
         'created_at' => date('c'),
-        'sessions' => []
+        'sessions' => [],
+        'tier' => 'free',
+        'status' => 'enabled',
+        'last_tier_change_at' => date('c'),
+        'reminders_sent' => []
     ];
 
     $users[] = $new_user;
