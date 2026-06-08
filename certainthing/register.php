@@ -30,9 +30,9 @@ if (isset($_SESSION['user_id'])) {
             
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required autocomplete="new-password">
+                <input type="password" id="password" name="password" required autocomplete="new-password" minlength="8">
             </div>
-            
+            <input type="checkbox" id="readtos" required> I accept the <a href="tos.html" target="_blank" style="text-decoration: none; color: 	#808080;">Terms of Services </a> 
             <button type="submit" class="btn-primary">Register</button>
         </form>
         
@@ -41,6 +41,7 @@ if (isset($_SESSION['user_id'])) {
     
     <footer>
         <p>&copy; <?php echo date('Y'); ?> <span class="icon">✦</span> CertainThing - by Vivacity Design AI Division</p>
+        <p><a href="tos.html" target="_blank" style="text-decoration: none; color: 	#808080;">Terms of Services </a> - <a href="privacy.html" target="_blank" style="text-decoration: none; color: 	#808080"> Privacy Policy</a></p>     
     </footer>
 </body>
 </html>
