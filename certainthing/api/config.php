@@ -117,8 +117,8 @@ define('STRIPE_PUBLISHABLE_KEY', 'pk_live_');
 define('STRIPE_SECRET_KEY',      'sk_test_');
 define('STRIPE_PUBLISHABLE_KEY', 'pk_test_');
 
-define('STRIPE_WEBHOOK_SECRET',  'whsec_up7ErLvB6iO0qLGGFAj3X5mSUj4OQuvo');    // dopo aver creato il webhook
-define('STRIPE_PRICE_ID',        'price_1TZEmHAL6ac73fuGXpYPufyR');
+define('STRIPE_WEBHOOK_SECRET',  'whsec_');    // dopo aver creato il webhook
+define('STRIPE_PRICE_ID',        'price_');
 // URL base dell'app — usato per i redirect Stripe
 define('BASE_URL', 'https://www.vivacitydesign.net/certainThing/v1.2/certainthing');
 
