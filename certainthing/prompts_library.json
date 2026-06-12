@@ -1,0 +1,148 @@
+{
+  "categories": [
+    {
+      "name": "Landing Page",
+      "icon": "🚀",
+      "prompts": [
+        {
+          "title": "SaaS Landing Page",
+          "text": "Create a modern SaaS landing page with hero section, features grid with icons, pricing table (3 tiers), testimonials carousel, and a strong CTA. Use gradient accents and clean typography."
+        },
+        {
+          "title": "Product Launch Page",
+          "text": "Build a product launch landing page with countdown timer, product hero image, key benefits section, early-access signup form, and social proof badges."
+        },
+        {
+          "title": "Agency Portfolio Landing",
+          "text": "Create a creative agency landing page with fullscreen hero video/image, services overview, case studies grid, team section, and contact form."
+        }
+      ]
+    },
+    {
+      "name": "E-commerce",
+      "icon": "🛒",
+      "prompts": [
+        {
+          "title": "Product Showcase Store",
+          "text": "Build an e-commerce product page with image gallery, size/color selectors, add-to-cart button, product description tabs, related products carousel, and customer reviews section."
+        },
+        {
+          "title": "Digital Product Store",
+          "text": "Create a digital product storefront with product cards, category filters, search bar, cart sidebar, and checkout form. Include download-after-purchase flow."
+        }
+      ]
+    },
+    {
+      "name": "Portfolio",
+      "icon": "🎨",
+      "prompts": [
+        {
+          "title": "Developer Portfolio",
+          "text": "Build a developer portfolio with animated hero intro, skills progress bars, project cards with live demo links, GitHub activity section, and contact form."
+        },
+        {
+          "title": "Photographer Portfolio",
+          "text": "Create a minimal photographer portfolio with masonry image grid, lightbox viewer, category filters, about section, and booking form."
+        }
+      ]
+    },
+    {
+      "name": "Blog",
+      "icon": "📝",
+      "prompts": [
+        {
+          "title": "Tech Blog",
+          "text": "Build a tech blog with featured post hero, post cards grid with tags and read time, sidebar with categories and popular posts, dark/light theme toggle, and newsletter signup."
+        },
+        {
+          "title": "Personal Blog",
+          "text": "Create a minimal personal blog with clean typography, post list with excerpts, tag cloud, about page, and RSS feed link. Focus on readability."
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "icon": "📊",
+      "prompts": [
+        {
+          "title": "Analytics Dashboard",
+          "text": "Build an analytics dashboard with KPI cards (revenue, users, conversion rate), line chart for trends, bar chart for comparisons, data table with sorting, and date range picker."
+        },
+        {
+          "title": "Project Management Board",
+          "text": "Create a Kanban-style project board with draggable task cards, columns (To Do, In Progress, Done), task detail modal, priority labels, and team member avatars."
+        }
+      ]
+    },
+    {
+      "name": "Forms & Tools",
+      "icon": "🛠️",
+      "prompts": [
+        {
+          "title": "Multi-step Form",
+          "text": "Build a multi-step registration form with progress bar, field validation, step navigation (back/next), summary review step, and success confirmation page."
+        },
+        {
+          "title": "Calculator Tool",
+          "text": "Create an interactive calculator tool (e.g. loan/mortgage calculator) with input sliders, real-time result updates, comparison chart, and PDF export button."
+        }
+      ]
+    },
+    {
+      "name": "Email Template",
+      "icon": "📧",
+      "prompts": [
+        {
+          "title": "Newsletter Template",
+          "text": "Build a responsive HTML email newsletter template with header logo, hero image, article sections with thumbnails, CTA buttons, social links footer. Must be table-based for email client compatibility."
+        },
+        {
+          "title": "Transactional Email",
+          "text": "Create a transactional email template (order confirmation) with order summary table, shipping details, tracking button, and help/support footer. Table-based layout."
+        }
+      ]
+    },
+    {
+      "name": "Documentation",
+      "icon": "📚",
+      "prompts": [
+        {
+          "title": "API Documentation",
+          "text": "Build an API documentation page with sidebar navigation, endpoint sections (GET/POST/PUT/DELETE), request/response code examples with syntax highlighting, authentication guide, and search."
+        },
+        {
+          "title": "Product Docs Site",
+          "text": "Create a product documentation site with sidebar tree navigation, markdown-style content area, breadcrumbs, previous/next page links, and table of contents per page."
+        }
+      ]
+    },
+    {
+      "name": "Game",
+      "icon": "🎮",
+      "prompts": [
+        {
+          "title": "Browser Mini-game",
+          "text": "Build a simple browser game (e.g. Snake, Tetris, or Memory) using HTML5 Canvas or DOM elements. Include score counter, high score storage (localStorage), start/pause/restart controls, and responsive layout."
+        },
+        {
+          "title": "Quiz Game",
+          "text": "Create an interactive quiz game with question cards, multiple choice answers, timer per question, score tracking, progress bar, and final results screen with share button."
+        }
+      ]
+    },
+    {
+      "name": "Restaurant & Local Business",
+      "icon": "🍽️",
+      "prompts": [
+        {
+          "title": "Restaurant Website",
+          "text": "Build a restaurant website with fullscreen hero image, digital menu with categories and prices, reservation form with date/time picker, photo gallery, Google Maps embed, and contact info."
+        },
+        {
+          "title": "Local Business Site",
+          "text": "Create a local business website with services list, business hours, team profiles, customer testimonials, location map, and contact form with WhatsApp button."
+        }
+      ]
+    }
+  ]
+}

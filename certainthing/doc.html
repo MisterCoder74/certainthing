@@ -1,546 +1,734 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CertainThing Documentation</title>
-    <style>
-        :root {
-            --bg: #0d1117;
-            --pane: #161b22;
-            --text: #c9d1d9;
-            --muted: #8b949e;
-            --accent: #58a6ff;
-            --border: #30363d;
-            --success: #238636;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        html, body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-        }
-
-        a {
-            color: var(--accent);
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        .layout {
-            display: grid;
-            grid-template-columns: 280px minmax(0, 1fr);
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            overflow-y: auto;
-            padding: 1.25rem;
-            border-right: 1px solid var(--border);
-            background: var(--pane);
-        }
-
-        .brand {
-            margin: 0 0 0.5rem;
-            font-size: 1.1rem;
-            color: var(--accent);
-        }
-
-        .subtitle {
-            margin: 0 0 1rem;
-            color: var(--muted);
-            font-size: 0.9rem;
-        }
-
-        .toc {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: grid;
-            gap: 0.4rem;
-        }
-
-        .toc a {
-            display: block;
-            padding: 0.4rem 0.6rem;
-            border: 1px solid transparent;
-            border-radius: 6px;
-            color: var(--text);
-        }
-
-        .toc a:hover {
-            border-color: var(--border);
-            background: rgba(88, 166, 255, 0.08);
-            text-decoration: none;
-        }
-
-        .main {
-            padding: 1.5rem;
-            max-width: 1100px;
-            width: 100%;
-        }
-
-        .hero {
-            background: linear-gradient(180deg, rgba(88, 166, 255, 0.16), rgba(88, 166, 255, 0.03));
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 1.25rem;
-            margin-bottom: 1rem;
-        }
-
-        h1, h2, h3 {
-            margin-top: 0;
-        }
-
-        h1 {
-            font-size: 1.8rem;
-            margin-bottom: 0.6rem;
-        }
-
-        h2 {
-            font-size: 1.3rem;
-            margin: 1.6rem 0 0.8rem;
-            color: var(--accent);
-        }
-
-        h3 {
-            font-size: 1rem;
-            margin: 1.1rem 0 0.5rem;
-        }
-
-        p, li {
-            line-height: 1.55;
-        }
-
-        .card {
-            background: var(--pane);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 0.9rem;
-        }
-
-        .chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.45rem;
-            margin-top: 0.7rem;
-        }
-
-        .chip {
-            font-size: 0.8rem;
-            border: 1px solid var(--border);
-            border-radius: 999px;
-            padding: 0.2rem 0.65rem;
-            color: var(--muted);
-            background: rgba(88, 166, 255, 0.08);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            border: 1px solid var(--border);
-            overflow: hidden;
-            border-radius: 8px;
-            background: var(--pane);
-            margin-bottom: 1rem;
-        }
-
-        th, td {
-            border-bottom: 1px solid var(--border);
-            text-align: left;
-            vertical-align: top;
-            padding: 0.55rem 0.65rem;
-            font-size: 0.92rem;
-        }
-
-        th {
-            color: var(--accent);
-            background: rgba(88, 166, 255, 0.08);
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        code, pre {
-            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-        }
-
-        pre {
-            margin: 0 0 1rem;
-            background: #010409;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            overflow: auto;
-            padding: 0.9rem;
-            color: #c9d1d9;
-            font-size: 0.86rem;
-            line-height: 1.45;
-        }
-
-        .flow {
-            margin: 0;
-            padding-left: 1.15rem;
-        }
-
-        .flow li {
-            margin-bottom: 0.35rem;
-        }
-
-        .success {
-            color: var(--success);
-            font-weight: 600;
-        }
-
-        @media (max-width: 980px) {
-            .layout {
-                grid-template-columns: 1fr;
+    <title>CertainThing — Documentazione | Tool di Vibe Coding AI Sviluppato in Italia</title>
+    <meta name="description" content="CertainThing è il tool di vibe coding AI sviluppato interamente in Italia. Descrivi la tua app a parole, ottieni codice funzionante in 60 secondi. Deploy con un click, push su GitHub, export ZIP. Solo €4.99/mese con token illimitati. Attivo a Roma, Pomezia, Latina, Albano Laziale, Sassari, Porto Torres, Olbia.">
+    <meta name="keywords" content="vibe coding, vibe coding Italia, tool AI italiano, generatore codice AI, creare app con AI, CertainThing, programmazione linguaggio naturale, deploy con un click, push GitHub, stack vanilla, BYOK OpenAI, gpt-5-nano, vibe coding Roma, vibe coding Pomezia, vibe coding Latina, vibe coding Albano Laziale, vibe coding Sassari, vibe coding Porto Torres, vibe coding Olbia, sviluppo app AI Lazio, sviluppo app AI Sardegna, alternativa Bolt, alternativa Lovable, alternativa Replit, AI made in Italy">
+    <meta name="author" content="Alessandro Demontis — Vivacity Design AI Division">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="https://www.vivacitydesign.net/certainThing/v1.2/certainthing/doc.html">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="CertainThing — Tool di Vibe Coding AI | Da Idea ad App Live in 60 Secondi">
+    <meta property="og:description" content="Descrivi la tua app a parole. L'AI scrive il codice, lo mostra in anteprima e lo pubblica online — in un minuto. Token illimitati, stack vanilla, €4.99/mese. Made in Italy.">
+    <meta property="og:url" content="https://www.vivacitydesign.net/certainThing/v1.2/certainthing/doc.html">
+    <meta property="og:image" content="https://www.vivacitydesign.net/vd_ai_division/vd-ai-certainthing/certainthing_05-20-2026_01.jpg">
+    <meta property="og:site_name" content="CertainThing">
+    <meta property="og:locale" content="it_IT">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="CertainThing — Tool di Vibe Coding AI Made in Italy">
+    <meta name="twitter:description" content="Da idea ad app live in 60 secondi. Token AI illimitati, stack vanilla, deploy istantaneo. €4.99/mese.">
+    <meta name="twitter:image" content="https://www.vivacitydesign.net/vd_ai_division/vd-ai-certainthing/certainthing_05-20-2026_01.jpg">
+    <meta name="geo.region" content="IT-62">
+    <meta name="geo.placename" content="Pomezia, Lazio, Italia">
+    <meta name="geo.position" content="41.6700;12.6400">
+    <meta name="ICBM" content="41.6700, 12.6400">
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@graph": [
+        {
+            "@type": "SoftwareApplication",
+            "@id": "https://www.vivacitydesign.net/certainThing/v1.2/certainthing/#software",
+            "name": "CertainThing",
+            "description": "Piattaforma di vibe coding AI sviluppata in Italia che trasforma il linguaggio naturale in applicazioni web funzionanti. Deploy con un click, push su GitHub, export ZIP, anteprima live, reasoning trasparente, input multimodale. Stack vanilla PHP/HTML/CSS/JS — funziona su qualsiasi hosting.",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Web Browser",
+            "url": "https://www.vivacitydesign.net/certainThing/v1.2/certainthing/",
+            "screenshot": "https://www.vivacitydesign.net/vd_ai_division/vd-ai-certainthing/certainthing_05-20-2026_01.jpg",
+            "inLanguage": ["it", "en"],
+            "countryOfOrigin": { "@type": "Country", "name": "Italia" },
+            "author": { "@type": "Person", "name": "Alessandro Demontis" },
+            "offers": {
+                "@type": "Offer",
+                "price": "4.99",
+                "priceCurrency": "EUR",
+                "priceValidUntil": "2027-12-31",
+                "availability": "https://schema.org/InStock",
+                "description": "Abbonamento mensile con 7 giorni di prova gratuita. BYOK — token illimitati tramite API Key OpenAI."
+            },
+            "featureList": [
+                "Chat conversazionale AI per generazione codice",
+                "Reasoning pane in tempo reale con trasparenza totale",
+                "Input multimodale: testo, immagini, URL, documenti",
+                "Anteprima live in sandbox",
+                "Deploy con un click su URL personale",
+                "Export ZIP con un click",
+                "Push su repository GitHub",
+                "Website analyzer per contesto design",
+                "Deploy manager con file browser ed editor codice",
+                "Persistenza sessioni basata su JSON",
+                "Integrazione BYOK OpenAI (gpt-5-nano)",
+                "Output vanilla stack: HTML, CSS, JS, PHP — nessun framework"
+            ]
+        },
+        {
+            "@type": ["Organization", "LocalBusiness"],
+            "@id": "https://www.vivacitydesign.net/#organization",
+            "name": "Vivacity Design AI Division",
+            "url": "https://www.vivacitydesign.net/vd_ai_division/",
+            "description": "Divisione AI di Vivacity Design specializzata in tool di sviluppo AI, chatbot, digital clone e workflow automatizzati. Sviluppo interamente italiano.",
+            "founder": { "@type": "Person", "name": "Alessandro Demontis" },
+            "areaServed": [
+                {
+                    "@type": "AdministrativeArea", "name": "Lazio",
+                    "containsPlace": [
+                        { "@type": "City", "name": "Roma" },
+                        { "@type": "City", "name": "Pomezia" },
+                        { "@type": "City", "name": "Latina" },
+                        { "@type": "City", "name": "Albano Laziale" }
+                    ]
+                },
+                {
+                    "@type": "AdministrativeArea", "name": "Nord Sardegna",
+                    "containsPlace": [
+                        { "@type": "City", "name": "Sassari" },
+                        { "@type": "City", "name": "Porto Torres" },
+                        { "@type": "City", "name": "Olbia" }
+                    ]
+                },
+                { "@type": "Country", "name": "Italia" }
+            ],
+            "sameAs": ["https://github.com/MisterCoder74/"]
+        },
+        {
+            "@type": "WebPage",
+            "@id": "https://www.vivacitydesign.net/certainThing/v1.2/certainthing/doc.html",
+            "url": "https://www.vivacitydesign.net/certainThing/v1.2/certainthing/doc.html",
+            "name": "CertainThing Documentazione — Tool di Vibe Coding AI Made in Italy",
+            "inLanguage": "it",
+            "about": { "@id": "https://www.vivacitydesign.net/certainThing/v1.2/certainthing/#software" },
+            "breadcrumb": {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.vivacitydesign.net/" },
+                    { "@type": "ListItem", "position": 2, "name": "AI Division", "item": "https://www.vivacitydesign.net/vd_ai_division/" },
+                    { "@type": "ListItem", "position": 3, "name": "CertainThing", "item": "https://www.vivacitydesign.net/certainThing/v1.2/certainthing/" },
+                    { "@type": "ListItem", "position": 4, "name": "Documentazione", "item": "https://www.vivacitydesign.net/certainThing/v1.2/certainthing/doc.html" }
+                ]
             }
+        },
+        {
+"@context": "https://schema.org",
+"@type": "FAQPage",
+"mainEntity": [
+{
+"@type": "Question",
+"name": "Cos'è il Vibe Coding?",
+"acceptedAnswer": {
+"@type": "Answer",
+"text": "È un approccio allo sviluppo software dove il tuo intento creativo guida la creazione. Descrivi la tua app in linguaggio naturale e l'AI traduce la conversazione in codice funzionante, gestendo l'implementazione tecnica mentre tu ti concentri sulla visione."
+}
+},
+{
+"@type": "Question",
+"name": "Che tipo di input supporta?",
+"acceptedAnswer": {
+"@type": "Answer",
+"text": "CertainThing è multimodale: accetta testo naturale, immagini, documenti di testo e URL. Puoi caricare uno screenshot di un design, un file con specifiche o l'URL di un sito esistente per fornire contesto all'AI."
+}
+},
+{
+"@type": "Question",
+"name": "Devo saper programmare?",
+"acceptedAnswer": {
+"@type": "Answer",
+"text": "No. CertainThing è progettato per tutti — dal principiante assoluto allo sviluppatore esperto. Se sai descrivere quello che vuoi, puoi usarlo. Il Reasoning Pane ti mostra cosa sta facendo l'AI ad ogni passaggio."
+}
+},
+{
+"@type": "Question",
+"name": "Quanto costa davvero?",
+"acceptedAnswer": {
+"@type": "Answer",
+"text": "L'abbonamento è €4.99/mese con 7 giorni di prova gratuita. L'AI funziona con la tua API Key OpenAI (modello gpt-5-nano): paghi solo i token che consumi, circa $0.25 per 1M di token. Nessun credito, nessun blocco, nessun costo nascosto."
+}
+},
+{
+"@type": "Question",
+"name": "Perché è meglio dei competitor più famosi?",
+"acceptedAnswer": {
+"@type": "Answer",
+"text": "Tre motivi concreti: 1) Costa 4-10 volte meno senza limiti di token. 2) Genera codice vanilla che funziona ovunque, non codice legato a framework specifici. 3) Zero configurazione — apri il browser e lavori. Non serve installare nulla."
+}
+},
+{
+"@type": "Question",
+"name": "Su che hosting posso pubblicare le app create?",
+"acceptedAnswer": {
+"@type": "Answer",
+"text": "Su qualsiasi hosting che supporti PHP — anche i piani gratuiti o da €1-2/mese. Non serve Node.js, non servono container Docker, non serve serverless. Un normalissimo hosting condiviso basta."
+}
+},
+{
+"@type": "Question",
+"name": "Posso usare il codice generato per progetti commerciali?",
+"acceptedAnswer": {
+"@type": "Answer",
+"text": "Sì. Il codice generato è tuo. Puoi usarlo, modificarlo e distribuirlo per qualsiasi scopo, personale o commerciale."
+}
+},
+{
+"@type": "Question",
+"name": "Come funziona il sistema BYOK?",
+"acceptedAnswer": {
+"@type": "Answer",
+"text": "BYOK sta per \"Bring Your Own Key\". Nella configurazione inserisci la tua API Key di OpenAI. L'AI di CertainThing usa il modello gpt-5-nano tramite la tua chiave — i costi dei token vengono addebitati direttamente sul tuo account OpenAI, dandoti pieno controllo e trasparenza sui consumi."
+}
+},
+{
+"@type": "Question",
+"name": "CertainThing è sicuro?",
+"acceptedAnswer": {
+"@type": "Answer",
+"text": "Sì. L'autenticazione usa bcrypt hash, i percorsi dei file sono protetti contro path traversal, e la tua API Key è salvata nel tuo profilo utente — non viene condivisa con nessuno. Tutti i dati risiedono sul server di CertainThing, non su servizi terzi (salvo le chiamate API a OpenAI per la generazione)."
+}
+},
+{
+"@type": "Question",
+"name": "È già disponibile?",
+"acceptedAnswer": {
+"@type": "Answer",
+"text": "Sì. CertainThing è in early access beta. Puoi registrarti gratuitamente e provarlo per 7 giorni senza impegno."
+}
+}
+]
+}
 
-            .sidebar {
-                position: static;
-                height: auto;
-                border-right: none;
-                border-bottom: 1px solid var(--border);
-            }
-        }
-    </style>
+    ]
+}
+    </script>
 </head>
+
+<style>
+:root { --bg: #0d1117; --text: #c9d1d9; --accent: #58a6ff; --border: #30363d; --surface: #161b22; --muted: #8b949e; --heading: #e6edf3; --green: #238636; --green-hover: #2ea043; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; line-height: 1.7; scroll-behavior: smooth; }
+a { color: var(--accent); text-decoration: none; transition: opacity .2s; }
+a:hover { text-decoration: underline; opacity: .85; }
+
+/* Header */
+.top-bar { position: sticky; top: 0; background: rgba(13,17,23,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); text-align: center; padding: .6rem 2rem; z-index: 1001; }
+.top-bar h1 { font-size: 1.6rem; color: var(--accent); }
+.top-bar h1 .icon { margin-right: .3rem; }
+nav { position: sticky; top: 3.2rem; background: rgba(13,17,23,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: .8rem 2rem; display: flex; justify-content: center; flex-wrap: wrap; gap: 1.2rem 2rem; z-index: 1000; }
+nav a { font-weight: 500; font-size: .9rem; }
+
+/* Sections */
+section { padding: 4.5rem 2rem; max-width: 1000px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+section:last-of-type { border-bottom: none; }
+h2 { color: var(--accent); font-size: 1.8rem; margin-bottom: 1.2rem; }
+h3 { color: var(--heading); font-size: 1.15rem; margin: 1.5rem 0 .6rem; }
+p { margin-bottom: 1rem; text-align: justify; }
+ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+li { margin-bottom: .5rem; }
+strong { color: var(--heading); }
+code { background: rgba(110,118,129,.2); padding: 2px 6px; border-radius: 4px; font-size: .9em; }
+.centered { text-align: center; }
+
+/* Badge */
+.badge-row { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin: 1.5rem 0; }
+.badge { display: inline-flex; align-items: center; gap: .4rem; background: var(--surface); border: 1px solid var(--border); padding: .35rem .9rem; border-radius: 20px; font-size: .85rem; color: var(--muted); }
+.badge .emoji { font-size: 1.1rem; }
+
+/* Cards */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.2rem; margin: 1.5rem 0; }
+.card { background: rgba(255,255,255,.03); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 1.5rem; transition: all .35s cubic-bezier(.175,.885,.32,1.275); }
+.card:hover { transform: translateY(-6px) scale(1.01); border-color: var(--accent); box-shadow: 0 8px 24px -8px rgba(88,166,255,.25); background: rgba(255,255,255,.05); }
+.card h3 { margin-top: 0; color: var(--accent); font-size: 1.05rem; }
+.card p { font-size: .92rem; text-align: left; margin-bottom: 0; }
+
+/* Comparison table */
+.compare-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: .92rem; }
+.compare-table th, .compare-table td { padding: .7rem 1rem; border: 1px solid var(--border); text-align: left; }
+.compare-table th { background: var(--surface); color: var(--accent); font-weight: 600; }
+.compare-table tr:nth-child(even) { background: rgba(255,255,255,.02); }
+.compare-table .winner { color: #3fb950; font-weight: 600; }
+
+/* Use case */
+.usecase { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.8rem; margin-bottom: 1.5rem; }
+.usecase h3 { color: var(--accent); margin-top: 0; font-size: 1.1rem; }
+.usecase .persona { color: var(--muted); font-size: .88rem; font-style: italic; margin-bottom: .8rem; }
+
+/* Steps */
+.step-row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin: 1.5rem 0; justify-content: center; }
+.step { flex: 1; min-width: 180px; max-width: 220px; text-align: center; }
+.step .num { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: var(--accent); color: var(--bg); font-weight: 700; font-size: 1.2rem; margin-bottom: .6rem; }
+.step p { font-size: .9rem; text-align: center; }
+
+/* Image */
+.features-image { max-width: 900px; width: 100%; height: auto; display: block; margin: 2rem auto; border-radius: 6px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+
+/* CTA */
+.cta-box { background: linear-gradient(135deg, rgba(35,134,54,.15), rgba(88,166,255,.1)); border: 1px solid var(--green); border-radius: 12px; padding: 3rem 2rem; text-align: center; margin: 2rem 0; }
+.cta-box h2 { color: #3fb950; }
+.btn { display: inline-block; background: var(--green); color: #fff; padding: .85rem 2rem; border-radius: 8px; font-weight: 700; font-size: 1.05rem; margin-top: 1rem; transition: background .2s, transform .15s; }
+.btn:hover { background: var(--green-hover); text-decoration: none; transform: translateY(-2px); }
+
+/* FAQ */
+.faq-item { margin-bottom: 1.8rem; }
+.faq-item h3 { color: var(--heading); font-size: 1.05rem; margin-bottom: .4rem; }
+
+/* Geo SEO text */
+.geo-section { background: var(--surface); border-top: 1px solid var(--border); padding: 3rem 2rem; }
+.geo-section .inner { max-width: 1000px; margin: 0 auto; }
+.geo-section h2 { font-size: 1.4rem; }
+.geo-section h3 { color: var(--accent); font-size: 1.1rem; }
+.geo-section p { font-size: .92rem; color: var(--muted); }
+
+/* Footer */
+footer { padding: 3rem 2rem; text-align: center; background: var(--surface); border-top: 1px solid var(--border); color: var(--muted); font-size: .85rem; }
+
+/* Video */
+.video-wrap { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; overflow: hidden; margin: 1.5rem 0; }
+.video-wrap video { width: 100%; display: block; }
+
+/* Responsive */
+@media (max-width: 830px) { section { padding: 3rem 1.5rem; } nav { gap: .8rem 1rem; } }
+@media (max-width: 480px) { h2 { font-size: 1.4rem; } .card-grid { grid-template-columns: 1fr; } .step-row { flex-direction: column; align-items: center; } }
+</style>
 <body>
-<div class="layout">
-    <aside class="sidebar">
-        <p class="brand">✦ CertainThing Docs</p>
-        <p class="subtitle">Phase 8 Documentation</p>
-        <ul class="toc">
-            <li><a href="#overview">Overview</a></li>
-            <li><a href="#architecture">Architecture</a></li>
-            <li><a href="#structure">Project Structure</a></li>
-            <li><a href="#functions">Function Reference</a></li>
-            <li><a href="#use-cases">Use Cases</a></li>
-            <li><a href="#feature-flows">Feature Flows</a></li>
-            <li><a href="#workflow">Prompt → Deploy Workflow</a></li>
-        </ul>
-    </aside>
 
-    <main class="main">
-        <section id="overview" class="hero">
-            <h1>CertainThing Project Documentation</h1>
-            <p>
-                CertainThing is a PHP + vanilla JavaScript AI coding assistant with a split interface: chat on the left,
-                reasoning/preview on the right. It supports streaming responses, multimodal inputs, website analysis,
-                session persistence, ZIP export, one-key deploy, and GitHub push.
-            </p>
-            <div class="chips">
-                <span class="chip">Dark Theme: #0d1117</span>
-                <span class="chip">Accent: #58a6ff</span>
-                <span class="chip">SSE Streaming</span>
-                <span class="chip">Vanilla JS + PHP</span>
-            </div>
-        </section>
-
-        <section id="architecture">
-            <h2>Architecture Summary</h2>
-            <div class="card">
-                <ul>
-                    <li><strong>Frontend:</strong> single-page UI rendered in <code>certainthing/index.php</code> and powered by <code>assets/app.js</code>.</li>
-                    <li><strong>Backend:</strong> REST-style PHP endpoints in <code>certainthing/api/</code>.</li>
-                    <li><strong>Streaming:</strong> chat endpoint emits SSE events (<code>reasoning</code>, <code>content</code>, <code>status</code>, <code>usage</code>, <code>error</code>).</li>
-                    <li><strong>Persistence:</strong> JSON storage in <code>certainthing/data/</code> (users + per-session history).</li>
-                    <li><strong>Deploy model:</strong> generated files can be exported (ZIP), deployed to local web folder, or committed to GitHub.</li>
-                </ul>
-            </div>
-        </section>
-
-        <section id="structure">
-            <h2>Project Structure Tree</h2>
-            <pre><code>/
-├── index.php
-├── README.md
-├── Piano_CertainThing.txt
-└── certainthing/
-    ├── doc.html
-    ├── index.php
-    ├── login.php
-    ├── register.php
-    ├── api/
-    │   ├── config.php
-    │   ├── chat.php
-    │   ├── upload.php
-    │   ├── scrape.php
-    │   ├── export.php
-    │   ├── deploy.php
-    │   ├── github_push.php
-    │   ├── get_sessions.php
-    │   ├── get_session.php
-    │   └── delete_session.php
-    ├── auth/
-    │   ├── login_handler.php
-    │   ├── register_handler.php
-    │   └── logout.php
-    ├── assets/
-    │   ├── app.js
-    │   └── style.css
-    ├── prompts/
-    │   └── system_prompt.txt
-    ├── data/            (runtime)
-    │   ├── users.json   (runtime)
-    │   └── sessions/    (runtime)
-    └── deploy/          (runtime output)</code></pre>
-
-            <h3>File Descriptions</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Path</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td><code>/index.php</code></td><td>Root redirect to <code>certainthing/index.php</code>.</td></tr>
-                    <tr><td><code>/README.md</code></td><td>Project status, setup, and usage by phase.</td></tr>
-                    <tr><td><code>/Piano_CertainThing.txt</code></td><td>Original full planning document and phased build notes.</td></tr>
-                    <tr><td><code>certainthing/doc.html</code></td><td>This comprehensive technical + product documentation page.</td></tr>
-                    <tr><td><code>certainthing/index.php</code></td><td>Main authenticated app UI (chat, sessions sidebar, reasoning tab, live preview tab).</td></tr>
-                    <tr><td><code>certainthing/login.php</code></td><td>Login page UI.</td></tr>
-                    <tr><td><code>certainthing/register.php</code></td><td>Registration page UI.</td></tr>
-                    <tr><td><code>certainthing/assets/style.css</code></td><td>Complete dark theme styling and responsive layout definitions.</td></tr>
-                    <tr><td><code>certainthing/assets/app.js</code></td><td>All frontend logic: chat, SSE parse, code rendering, sessions, preview, deploy, GitHub modal.</td></tr>
-                    <tr><td><code>certainthing/prompts/system_prompt.txt</code></td><td>System/developer prompt rules used for model behavior and output format.</td></tr>
-                    <tr><td><code>certainthing/api/config.php</code></td><td>Shared constants, session bootstrap, auth checks, safe JSON helpers, SSE helper.</td></tr>
-                    <tr><td><code>certainthing/api/chat.php</code></td><td>Main streaming AI endpoint. Handles attachments, URL scrape context, history, OpenAI call, session save.</td></tr>
-                    <tr><td><code>certainthing/api/upload.php</code></td><td>Handles file/image uploads and returns standardized attachment payloads.</td></tr>
-                    <tr><td><code>certainthing/api/scrape.php</code></td><td>Website fetch and text extraction utility via cURL + DOM parsing.</td></tr>
-                    <tr><td><code>certainthing/api/export.php</code></td><td>Builds and streams ZIP archive of generated files.</td></tr>
-                    <tr><td><code>certainthing/api/deploy.php</code></td><td>Writes generated files to deploy folder and returns live view URL.</td></tr>
-                    <tr><td><code>certainthing/api/github_push.php</code></td><td>Uses GitHub API (tree/commit/ref flow) to push generated files.</td></tr>
-                    <tr><td><code>certainthing/api/get_sessions.php</code></td><td>Lists user sessions with metadata (title, dates, message count).</td></tr>
-                    <tr><td><code>certainthing/api/get_session.php</code></td><td>Returns one session JSON by <code>session_id</code>.</td></tr>
-                    <tr><td><code>certainthing/api/delete_session.php</code></td><td>Deletes session file and matching deploy folder.</td></tr>
-                    <tr><td><code>certainthing/auth/login_handler.php</code></td><td>Authenticates user credentials and sets session variables.</td></tr>
-                    <tr><td><code>certainthing/auth/register_handler.php</code></td><td>Creates user record with bcrypt hash and auto-login.</td></tr>
-                    <tr><td><code>certainthing/auth/logout.php</code></td><td>Destroys auth session and clears session cookie.</td></tr>
-                </tbody>
-            </table>
-        </section>
-
-        <section id="functions">
-            <h2>Function Reference (by file)</h2>
-
-            <h3><code>certainthing/api/config.php</code></h3>
-            <table>
-                <thead><tr><th>Function</th><th>Purpose</th></tr></thead>
-                <tbody>
-                <tr><td><code>send_event($type, $text)</code></td><td>Sends one SSE event packet to the frontend stream consumer.</td></tr>
-                <tr><td><code>check_auth()</code></td><td>Guards endpoints and exits with HTTP 401 JSON when user is not logged in.</td></tr>
-                <tr><td><code>safe_read_json($file)</code></td><td>Reads JSON file with shared lock and safe fallback.</td></tr>
-                <tr><td><code>safe_write_json($file, $data)</code></td><td>Writes JSON file with exclusive lock and directory auto-create.</td></tr>
-                </tbody>
-            </table>
-
-            <h3><code>certainthing/api/scrape.php</code></h3>
-            <table>
-                <thead><tr><th>Function</th><th>Purpose</th></tr></thead>
-                <tbody>
-                <tr><td><code>scrape_url($url)</code></td><td>Fetches URL, strips non-content nodes, extracts text/title, truncates for model context.</td></tr>
-                </tbody>
-            </table>
-
-            <h3><code>certainthing/api/github_push.php</code></h3>
-            <table>
-                <thead><tr><th>Function</th><th>Purpose</th></tr></thead>
-                <tbody>
-                <tr><td><code>github_api($url, $pat, $method = 'GET', $post_data = null)</code></td><td>Generic GitHub API wrapper for GET/POST/PATCH calls.</td></tr>
-                </tbody>
-            </table>
-
-            <h3><code>certainthing/assets/app.js</code></h3>
-            <table>
-                <thead><tr><th>Function</th><th>Purpose</th></tr></thead>
-                <tbody>
-                <tr><td><code>uploadFile(file)</code></td><td>Uploads selected file to <code>api/upload.php</code> and queues attachment.</td></tr>
-                <tr><td><code>addAttachmentToQueue(attachment)</code></td><td>Adds attachment to pending-send queue.</td></tr>
-                <tr><td><code>renderAttachmentChips()</code></td><td>Renders image/file chips with remove actions.</td></tr>
-                <tr><td><code>startNewChat()</code></td><td>Creates a new session id and resets message/reasoning panes.</td></tr>
-                <tr><td><code>fetchSessions()</code></td><td>Loads session list from backend.</td></tr>
-                <tr><td><code>renderSessions(sessions)</code></td><td>Draws session sidebar items with active state and delete buttons.</td></tr>
-                <tr><td><code>updateSessionCount()</code></td><td>Updates sidebar footer count text.</td></tr>
-                <tr><td><code>filterSessions(query)</code></td><td>Client-side filtering for session search.</td></tr>
-                <tr><td><code>switchSession(sessionId)</code></td><td>Loads selected session into UI and resets status.</td></tr>
-                <tr><td><code>deleteSession(sessionId)</code></td><td>Calls delete API and handles active-session fallback.</td></tr>
-                <tr><td><code>loadSession(sessionId)</code></td><td>Loads message history and re-renders messages.</td></tr>
-                <tr><td><code>deployLatestCode()</code></td><td>Extracts code files from latest assistant reply and deploys to server folder.</td></tr>
-                <tr><td><code>escapeHtml(text)</code></td><td>Escapes text to safe HTML output.</td></tr>
-                <tr><td><code>appendMessage(role, text, attachments)</code></td><td>Renders a chat bubble (including attachments + code highlighting).</td></tr>
-                <tr><td><code>formatText(text)</code></td><td>Converts markdown-like fenced blocks into structured code containers.</td></tr>
-                <tr><td><code>sanitizeHtml(html)</code></td><td>Sanitizes formatted content via DOMParser and script removal.</td></tr>
-                <tr><td><code>finalizeAssistantMessage(bubble)</code></td><td>Builds multi-file tabs, wires copy/download/export/GitHub actions.</td></tr>
-                <tr><td><code>copyToClipboard(text)</code></td><td>Clipboard helper with error handling.</td></tr>
-                <tr><td><code>downloadFile(name, content)</code></td><td>Downloads one generated file from browser memory.</td></tr>
-                <tr><td><code>exportAsZip(files)</code></td><td>Requests ZIP export endpoint and triggers browser download.</td></tr>
-                <tr><td><code>openGitHubModal(files)</code></td><td>Opens GitHub push modal and submits commit payload.</td></tr>
-                <tr><td><code>refreshPreview()</code></td><td>Builds iframe <code>srcdoc</code> by inlining generated HTML/CSS/JS files.</td></tr>
-                <tr><td><code>appendReasoning(text, isStreaming = false)</code></td><td>Streams reasoning text with old/new step visual state.</td></tr>
-                <tr><td><code>sendMessage(message, attachments, urls)</code></td><td>Handles SSE chat request lifecycle and live UI updates.</td></tr>
-                <tr><td><code>showToast(message, type = 'info')</code></td><td>Transient status/error notifications.</td></tr>
-                </tbody>
-            </table>
-
-            <div class="card">
-                <p><strong>Note:</strong> Other PHP files (<code>chat.php</code>, <code>upload.php</code>, <code>deploy.php</code>, auth handlers, etc.) are endpoint scripts executed procedurally.</p>
-            </div>
-        </section>
-
-        <section id="use-cases">
-            <h2>Primary Use Cases</h2>
-            <div class="card">
-                <h3>1) Build a project from scratch</h3>
-                <p>User describes desired app; AI streams reasoning and complete multi-file code; user previews, iterates, exports/deploys.</p>
-            </div>
-            <div class="card">
-                <h3>2) Analyze and clone a website</h3>
-                <p>User pastes URL; scraper fetches content; AI summarizes structure and generates an inspired/replicated implementation.</p>
-            </div>
-            <div class="card">
-                <h3>3) Generate UI from design image</h3>
-                <p>User uploads JPG/PNG/WebP screenshot; AI infers layout/style and produces matching frontend code.</p>
-            </div>
-            <div class="card">
-                <h3>4) Refactor existing codebase snippets</h3>
-                <p>User uploads source files (HTML/CSS/JS/PHP/etc.); AI edits or extends existing code while keeping context.</p>
-            </div>
-            <div class="card">
-                <h3>5) Ship output quickly</h3>
-                <p>Generated code can be downloaded as ZIP, deployed live by pressing <code>F10</code>, or pushed directly to GitHub.</p>
-            </div>
-        </section>
-
-        <section id="feature-flows">
-            <h2>Use Flows by Feature</h2>
-
-            <div class="card">
-                <h3>F1 — Conversational Chat + Streaming</h3>
-                <ol class="flow">
-                    <li>User submits prompt (optional attachments/URLs).</li>
-                    <li>Frontend posts <code>FormData</code> to <code>api/chat.php</code>.</li>
-                    <li>Backend builds prompt + history, calls OpenAI with streaming enabled.</li>
-                    <li>SSE events stream into UI; assistant bubble is built incrementally.</li>
-                </ol>
-            </div>
-
-            <div class="card">
-                <h3>F2 — Reasoning Trace Pane</h3>
-                <ol class="flow">
-                    <li><code>chat.php</code> emits <code>reasoning</code> events for loading, scraping, and model reasoning deltas.</li>
-                    <li><code>appendReasoning()</code> updates current step in real time.</li>
-                    <li>Status badge moves through <em>Thinking → Generating → Done</em>.</li>
-                </ol>
-            </div>
-
-            <div class="card">
-                <h3>F3 — Code Renderer + Multi-file Tabs + ZIP Export</h3>
-                <ol class="flow">
-                    <li>Assistant response is parsed for fenced code blocks.</li>
-                    <li><code>finalizeAssistantMessage()</code> groups adjacent blocks into tabbed multi-file UI.</li>
-                    <li>Per-file actions: copy, download; grouped actions: ZIP export, GitHub push.</li>
-                </ol>
-            </div>
-
-            <div class="card">
-                <h3>F4/F5 — Image & File Understanding</h3>
-                <ol class="flow">
-                    <li>User selects files in attachment picker.</li>
-                    <li><code>upload.php</code> converts images to data URLs or reads text content.</li>
-                    <li>Attachment payload is appended to message and included in model context.</li>
-                </ol>
-            </div>
-
-            <div class="card">
-                <h3>F6 — Website Analyzer</h3>
-                <ol class="flow">
-                    <li>URL regex detects links in prompt text.</li>
-                    <li><code>chat.php</code> calls <code>scrape_url()</code> for each URL.</li>
-                    <li>Sanitized website text is injected into prompt context before model request.</li>
-                </ol>
-            </div>
-
-            <div class="card">
-                <h3>F7/F8 — Iteration + Session Persistence</h3>
-                <ol class="flow">
-                    <li>Each turn is appended to session JSON file <code>{user}_{session}.json</code>.</li>
-                    <li>Sidebar loads sessions via <code>get_sessions.php</code>.</li>
-                    <li>User can switch/search/delete sessions without leaving app.</li>
-                </ol>
-            </div>
-
-            <div class="card">
-                <h3>F9 — Export as ZIP</h3>
-                <ol class="flow">
-                    <li>Frontend posts extracted files to <code>export.php</code>.</li>
-                    <li>Backend creates temp ZIP and streams it as attachment download.</li>
-                </ol>
-            </div>
-
-            <div class="card">
-                <h3>F10 — Deploy (F10 / button)</h3>
-                <ol class="flow">
-                    <li>Frontend extracts last assistant code blocks and deduplicates names.</li>
-                    <li><code>deploy.php</code> writes files to <code>deploy/{user}/{session}</code>.</li>
-                    <li>UI shows live URL card; user opens deployed app in new tab.</li>
-                </ol>
-            </div>
-
-            <div class="card">
-                <h3>F11 — Email/Password Auth</h3>
-                <ol class="flow">
-                    <li>Register stores bcrypt hash in <code>users.json</code>.</li>
-                    <li>Login validates via <code>password_verify()</code> and sets PHP session.</li>
-                    <li>Protected APIs call <code>check_auth()</code> before processing.</li>
-                </ol>
-            </div>
-
-            <div class="card">
-                <h3>Phase 7 Extension — Live Preview + GitHub Push</h3>
-                <ol class="flow">
-                    <li>Preview tab composes in-memory files and injects CSS/JS into HTML <code>srcdoc</code>.</li>
-                    <li>GitHub modal collects repo, PAT, branch, message and posts to <code>github_push.php</code>.</li>
-                    <li>Backend creates tree → commit → ref update and returns commit URL.</li>
-                </ol>
-            </div>
-        </section>
-
-        <section id="workflow">
-            <h2>Typical Workflow: Prompt to Deploy (Landing Page Example)</h2>
-            <div class="card">
-                <h3>Scenario</h3>
-                <p>User prompt: <em>"Build a modern SaaS landing page with hero, pricing cards, FAQ, and contact form."</em></p>
-                <ol class="flow">
-                    <li><strong>Prompt Input:</strong> User submits request in chat box.</li>
-                    <li><strong>Reasoning Phase:</strong> Right pane shows model planning and generation status in real time.</li>
-                    <li><strong>Code Generation:</strong> Assistant streams one or multiple files (e.g. <code>index.html</code>, <code>style.css</code>, <code>script.js</code>).</li>
-                    <li><strong>Code Interaction:</strong> User reviews tabs, copies snippets, or downloads individual files.</li>
-                    <li><strong>Live Preview:</strong> User opens Preview tab to validate layout, interactions, and responsive feel.</li>
-                    <li><strong>Iteration:</strong> User asks follow-up changes ("make it minimal", "add testimonials", "change palette").</li>
-                    <li><strong>Deploy:</strong> User presses <code>F10</code> or clicks <strong>🚀 Deploy</strong>.</li>
-                    <li><strong>Live URL:</strong> Backend returns <code>/deploy/{user}/{session}</code> link for immediate browser access.</li>
-                    <li><strong>Optional Publish:</strong> User pushes same files to GitHub from the generated code action.</li>
-                </ol>
-                <p class="success">Result: fast loop from idea → generated code → preview → live deployment in one workspace.</p>
-            </div>
-        </section>
-    </main>
+<div class="top-bar">
+        <h1><span class="icon">✦</span> CertainThing — Documentazione</h1>
+        <a href="doc_en.html">English Version</a>
 </div>
+
+<nav>
+    <a href="#made-in-italy">Made in Italy</a>
+    <a href="#perche">Perché CertainThing</a>
+    <a href="#confronto">Confronto</a>
+    <a href="#caratteristiche">Caratteristiche</a>
+    <a href="#come-funziona">Come Funziona</a>
+    <a href="#use-cases">Use Cases</a>
+    <a href="#architettura">Architettura</a>
+    <a href="#demo">Demo</a>
+    <a href="#faq">FAQ</a>
+    <a href="#inizia">Inizia Ora</a>
+</nav>
+
+<!-- ==================== HERO ==================== -->
+<section class="centered">
+    <h2>Da Idea ad App Live in 60 Secondi</h2>
+    <p style="max-width:700px;margin:0 auto 1.5rem;font-size:1.1rem;text-align:center;">
+        <strong>CertainThing</strong> è il tool di <em>vibe coding</em> AI sviluppato interamente in Italia.<br>
+        Descrivi la tua applicazione a parole — l'AI scrive il codice, lo mostra in anteprima e lo pubblica online. Tutto in un minuto.
+    </p>
+    <div class="badge-row">
+        <span class="badge"><span class="emoji">🇮🇹</span> Made in Italy</span>
+        <span class="badge"><span class="emoji">⚡</span> Deploy Istantaneo</span>
+        <span class="badge"><span class="emoji">♾️</span> Token Illimitati</span>
+        <span class="badge"><span class="emoji">💰</span> Solo €4.99/mese</span>
+    </div>
+    <img src="https://www.vivacitydesign.net/vd_ai_division/vd-ai-certainthing/certainthing_05-20-2026_01.jpg" alt="Anteprima interfaccia CertainThing — vibe coding AI tool italiano" class="features-image">
+</section>
+
+<!-- ==================== MADE IN ITALY ==================== -->
+<section id="made-in-italy">
+    <h2>🇮🇹 Sviluppato in Italia, per gli Italiani</h2>
+    <p>CertainThing nasce a <strong>Pomezia</strong>, nel cuore del Lazio, dall'esperienza di <strong>Vivacity Design AI Division</strong> — la divisione di intelligenza artificiale di Vivacity Design Web Agency, fondata da <strong>Alessandro Demontis</strong>.</p>
+    <p>Non è un prodotto importato e localizzato. È <strong>pensato, progettato e sviluppato interamente in Italia</strong>, con un'attenzione specifica alle esigenze del mercato italiano: freelancer, piccole agenzie, professionisti e imprenditori che hanno bisogno di risultati concreti senza la complessità (e i costi) dei tool americani.</p>
+    <p>Allo stesso tempo, CertainThing parla un linguaggio universale: l'interfaccia è in inglese per garantire compatibilità internazionale, e lo stack tecnologico vanilla lo rende deployabile su qualsiasi hosting nel mondo — dal provider italiano al server cloud globale.</p>
+    <p><strong>Radici italiane, visione globale.</strong></p>
+</section>
+
+<!-- ==================== PERCHE ==================== -->
+<section id="perche">
+    <h2>Perché CertainThing?</h2>
+    <p>Esistono decine di tool di vibe coding — Bolt, Lovable, Replit, v0, Cursor. Sono potenti, ma condividono gli stessi problemi:</p>
+
+    <div class="card-grid">
+        <div class="card">
+            <h3>💸 Prezzo Onesto</h3>
+            <p>Solo <strong>€4.99/mese</strong> contro i €19–49/mese dei competitor. Nessun sistema di crediti opaco. Nessun blocco improvviso.</p>
+        </div>
+        <div class="card">
+            <h3>♾️ Token Illimitati</h3>
+            <p>Con il modello <strong>BYOK</strong> (Bring Your Own Key) colleghi la tua API Key OpenAI e paghi solo a consumo. 1M token con <code>gpt-5-nano</code> costa circa <strong>$0.25</strong> — nessun limite artificiale.</p>
+        </div>
+        <div class="card">
+            <h3>🧱 Stack Vanilla</h3>
+            <p>Niente React, niente Next.js, niente Node. CertainThing genera <strong>HTML, CSS, JS e PHP puro</strong> — funziona su qualsiasi hosting, anche quelli gratuiti, basta che offrano PHP.</p>
+        </div>
+        <div class="card">
+            <h3>⚡ Zero Configurazione</h3>
+            <p>Niente CLI da installare, niente ambiente da configurare, niente dipendenze da gestire. <strong>Apri il browser, scrivi, ottieni.</strong></p>
+        </div>
+        <div class="card">
+            <h3>🚀 Deploy Reale</h3>
+            <p>Non un'anteprima temporanea — un vero <strong>deploy su URL personale</strong> con un click con tanto di Deploy Manager protetto da password. Più export ZIP e push diretto su GitHub.</p>
+        </div>
+        <div class="card">
+            <h3>🧠 Trasparenza AI</h3>
+            <p>Il <strong>Reasoning Pane</strong> ti mostra in tempo reale come l'AI ragiona, pianifica e implementa. Nessuna black box.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== CONFRONTO ==================== -->
+<section id="confronto">
+    <h2>Confronto Diretto</h2>
+    <p>Ecco come CertainThing si posiziona rispetto ai tool più noti:</p>
+    <table class="compare-table">
+        <thead>
+            <tr>
+                <th>Caratteristica</th>
+                <th>CertainThing</th>
+                <th>Bolt / Lovable</th>
+                <th>Replit / v0</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Prezzo mensile</td>
+                <td class="winner">€4.99</td>
+                <td>€19–49</td>
+                <td>€25–49</td>
+            </tr>
+            <tr>
+                <td>Sistema token</td>
+                <td class="winner">Illimitati (BYOK)</td>
+                <td>Crediti limitati, opachi</td>
+                <td>Crediti limitati</td>
+            </tr>
+            <tr>
+                <td>Stack output</td>
+                <td class="winner">Vanilla (HTML/CSS/JS/PHP)</td>
+                <td>React / Next.js / Node</td>
+                <td>Framework-dependent</td>
+            </tr>
+            <tr>
+                <td>Hosting richiesto</td>
+                <td class="winner">Qualsiasi (anche gratuito con PHP)</td>
+                <td>Piattaforma specifica o Node hosting</td>
+                <td>Piattaforma propria</td>
+            </tr>
+            <tr>
+                <td>Deploy integrato</td>
+                <td class="winner">Sì — URL personale permanente</td>
+                <td>Sì — su piattaforma proprietaria</td>
+                <td>Sì — su piattaforma proprietaria</td>
+            </tr>
+            <tr>
+                <td>GitHub Push</td>
+                <td class="winner">Sì</td>
+                <td>Sì</td>
+                <td>Sì (Git)</td>
+            </tr>
+            <tr>
+                <td>Export ZIP</td>
+                <td class="winner">Sì</td>
+                <td>Limitato</td>
+                <td>Sì</td>
+            </tr>
+            <tr>
+                <td>Reasoning trasparente</td>
+                <td class="winner">Sì — Reasoning Pane</td>
+                <td>No</td>
+                <td>Parziale</td>
+            </tr>
+            <tr>
+                <td>Website Analyzer</td>
+                <td class="winner">Sì — scraping URL integrato</td>
+                <td>No</td>
+                <td>No</td>
+            </tr>
+            <tr>
+                <td>Configurazione iniziale</td>
+                <td class="winner">Zero — browser only</td>
+                <td>Minima</td>
+                <td>Setup ambiente</td>
+            </tr>
+            <tr>
+                <td>Sviluppo</td>
+                <td class="winner">🇮🇹 Made in Italy</td>
+                <td>🇺🇸 USA</td>
+                <td>🇺🇸 USA</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- ==================== CARATTERISTICHE ==================== -->
+<section id="caratteristiche">
+    <h2>Caratteristiche Complete</h2>
+
+    <h3>💬 Chat Conversazionale AI</h3>
+    <p>Descrivi la tua applicazione in linguaggio naturale, senza vincoli di linguaggio o struttura. L'AI interpreta la tua intenzione e genera codice funzionante, iterando sulla conversazione fino al risultato desiderato.</p>
+
+    <h3>🧠 Reasoning Pane</h3>
+    <p>Osserva in tempo reale come l'AI pianifica, struttura e implementa il tuo progetto. Ogni decisione architettonica, ogni scelta tecnologica è visibile — trasparenza totale sul processo creativo.</p>
+
+    <h3>📎 Input Multimodale</h3>
+    <p>Carica immagini, documenti di testo o incolla URL e immagini per fornire contesto all'AI. Vuoi ricreare il layout di un sito? Incolla l'URL e il Website Analyzer lo analizza automaticamente, estraendo struttura e stile come riferimento.</p>
+
+    <h3>👁️ Live Preview</h3>
+    <p>Ogni generazione viene renderizzata istantaneamente in un frame sandbox isolato. Vedi il risultato in tempo reale mentre l'AI scrive il codice.</p>
+
+    <h3>🚀 Deploy con Un Click</h3>
+    <p>Passa dal concept alla app live istantaneamente. Il tuo progetto viene pubblicato su un URL personale permanente accessibile da chiunque — senza configurare server, DNS o pipeline CI/CD.</p>
+
+    <h3>📦 Export ZIP</h3>
+    <p>Scarica l'intero progetto come archivio ZIP con un click. Tutti i file, pronti per essere caricati su qualsiasi hosting o integrati in un progetto esistente.</p>
+
+    <h3>🐙 Push su GitHub</h3>
+    <p>Integrazione diretta con GitHub: fai push del progetto su un repository con un click. Perfetto per versionamento, collaborazione e deployment automatizzato.</p>
+
+    <h3>🔍 Website Analyzer</h3>
+    <p>Puoi caricare files di codice, incollare codice o screenshot direttamente nel prompt, facendo analizzare a CertainThing siti web esistenti per estrarre struttura, layout e stile come contesto per l'AI. Ideale per ricreare o trarre ispirazione da design esistenti.</p>
+
+    <h3>📂 Deploy Manager</h3>
+    <p>Pannello centralizzato per gestire tutti i tuoi deploy: naviga file e cartelle, modifica codice con l'editor integrato, elimina, scarica, copia link pubblici. Tutto da un'unica interfaccia autenticata.</p>
+
+    <h3>💾 Persistenza Sessioni</h3>
+    <p>Ogni progetto è una sessione salvata automaticamente in formato JSON. Riprendi il lavoro dove lo avevi lasciato, senza perdere contesto o cronologia delle conversazioni.</p>
+</section>
+
+<!-- ==================== COME FUNZIONA ==================== -->
+<section id="come-funziona">
+    <h2>Come Funziona</h2>
+    <div class="step-row">
+        <div class="step">
+            <div class="num">1</div>
+            <h3>Descrivi</h3>
+            <p>Scrivi in linguaggio naturale cosa vuoi creare. L'AI capisce il tuo intento.</p>
+        </div>
+        <div class="step">
+            <div class="num">2</div>
+            <h3>Osserva</h3>
+            <p>Il Reasoning Pane mostra come l'AI pianifica e struttura il progetto.</p>
+        </div>
+        <div class="step">
+            <div class="num">3</div>
+            <h3>Anteprima</h3>
+            <p>Il codice viene renderizzato in tempo reale nel live preview sandbox.</p>
+        </div>
+        <div class="step">
+            <div class="num">4</div>
+            <h3>Itera</h3>
+            <p>Affina il risultato con nuovi prompt. L'AI mantiene il contesto completo.</p>
+        </div>
+        <div class="step">
+            <div class="num">5</div>
+            <h3>Pubblica</h3>
+            <p>Deploy, ZIP o GitHub — il tuo progetto è online in un click.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== USE CASES ==================== -->
+<section id="use-cases">
+    <h2>Use Cases Reali</h2>
+
+    <div class="usecase">
+        <h3>🎨 Il Freelancer che Deve Consegnare Ieri</h3>
+        <p class="persona">Marco, web designer freelance a Roma — 3 clienti attivi, zero tempo libero.</p>
+        <p>Marco ha un cliente che vuole una landing page per domani. Con CertainThing, incolla l'URL del sito attuale nel Website Analyzer, descrive le modifiche in chat, e in 10 minuti ha una landing page completa con form di contatto, responsive, pronta per il deploy. La esporta come ZIP, la carica sull'hosting del cliente. Fattura emessa, cliente contento.</p>
+        <p><strong>Tempo risparmiato:</strong> 6-8 ore → 10 minuti.</p>
+    </div>
+
+    <div class="usecase">
+        <h3>🏢 La Piccola Agenzia che Vuole Scalare</h3>
+        <p class="persona">Digital Agency "CreativeLab" a Latina — 4 persone, 15 progetti attivi.</p>
+        <p>Il team usa CertainThing per prototipare rapidamente le proposte ai clienti. Invece di presentare mockup statici, presentano prototipi funzionanti con deploy live. Il cliente vede e interagisce con l'app reale, non con un PDF. Quando il progetto è approvato, il codice vanilla è già la base su cui costruire. Push su GitHub, code review, in produzione.</p>
+        <p><strong>Valore:</strong> Prototipi funzionanti al prezzo di un mockup.</p>
+    </div>
+
+    <div class="usecase">
+        <h3>💼 L'Imprenditore Non-Tecnico</h3>
+        <p class="persona">Roberto, proprietario di un ristorante a Pomezia — ha un'idea per un sito di prenotazioni online.</p>
+        <p>Roberto non sa programmare, ma sa descrivere esattamente cosa vuole: "un sito con il menu, le foto del locale, un form per prenotare indicando data, orario e numero di persone". Lo scrive in CertainThing, vede il risultato in anteprima, chiede qualche modifica ("il bottone più grande", "aggiungi i prezzi"), e fa deploy. Il sito è online in 30 minuti, funziona su qualsiasi hosting da €2/mese.</p>
+        <p><strong>Valore:</strong> Da idea a sito online senza scrivere una riga di codice e senza pagare uno sviluppatore.</p>
+    </div>
+
+    <div class="usecase">
+        <h3>⚡ Lo Sviluppatore che Prototipa</h3>
+        <p class="persona">Davide, developer senior a Olbia — sta validando un'idea per una SaaS.</p>
+        <p>Davide sa programmare, ma non vuole perdere 2 settimane su un prototipo che potrebbe non funzionare commercialmente. Usa CertainThing per generare il frontend completo in un'ora, fa deploy per i beta tester, raccoglie feedback. Se l'idea regge, migra il codice vanilla nel suo stack definitivo. Se non regge, ha perso un'ora, non due settimane.</p>
+        <p><strong>Valore:</strong> Validazione rapida a costo quasi zero.</p>
+    </div>
+
+    <div class="usecase">
+        <h3>📱 Il Social Media Manager</h3>
+        <p class="persona">Laura, social media manager ad Albano Laziale — gestisce 8 clienti.</p>
+        <p>Laura crea mini landing page per le campagne social dei suoi clienti: pagine promo per lanci prodotto, squeeze page per lead generation, pagine evento con countdown. Con CertainThing genera ogni pagina in 10 minuti, la deploya con un link personalizzato, e la inserisce nei post e nelle ads. Niente Linktree, niente page builder — pagine vere, veloci, sue.</p>
+        <p><strong>Valore:</strong> Landing page custom per ogni campagna, in minuti.</p>
+    </div>
+</section>
+
+<!-- ==================== ARCHITETTURA ==================== -->
+<section id="architettura">
+    <h2>Architettura Tecnica</h2>
+
+    <h3>Stack Tecnologico</h3>
+    <ul>
+        <li><strong>Backend:</strong> PHP — nessun framework, nessuna dipendenza esterna</li>
+        <li><strong>Frontend:</strong> HTML5, CSS3, JavaScript vanilla</li>
+        <li><strong>Persistenza:</strong> File JSON — nessun database richiesto</li>
+        <li><strong>AI Engine:</strong> OpenAI API (<code>gpt-5-nano</code>) via BYOK</li>
+        <li><strong>Autenticazione:</strong> Custom login con bcrypt hash</li>
+        <li><strong>Pagamento:</strong> Stripe (€4.99/mese, 7 giorni trial)</li>
+    </ul>
+
+    <h3>Struttura API</h3>
+    <table class="compare-table">
+        <thead><tr><th>Endpoint</th><th>Funzione</th></tr></thead>
+        <tbody>
+            <tr><td><code>chat.php</code></td><td>Core — comunicazione con LLM, generazione codice conversazionale</td></tr>
+            <tr><td><code>deploy.php</code></td><td>Pubblica i file della sessione su URL personale permanente</td></tr>
+            <tr><td><code>export.php</code></td><td>Export dell'intero progetto come archivio ZIP</td></tr>
+            <tr><td><code>github_push.php</code></td><td>Push diretto su repository GitHub</td></tr>
+            <tr><td><code>scrape.php</code></td><td>Website Analyzer — scraping URL per contesto design</td></tr>
+            <tr><td><code>upload.php</code></td><td>Upload file e immagini nella sessione corrente</td></tr>
+            <tr><td><code>get_session.php</code></td><td>Carica una singola sessione (ripresa lavoro)</td></tr>
+            <tr><td><code>get_sessions.php</code></td><td>Lista tutte le sessioni dell'utente</td></tr>
+            <tr><td><code>delete_session.php</code></td><td>Eliminazione sessione e file associati</td></tr>
+            <tr><td><code>save_api_key.php</code></td><td>Salvataggio API Key OpenAI dell'utente</td></tr>
+            <tr><td><code>config.php</code></td><td>Configurazione centralizzata</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Struttura Deploy</h3>
+    <p>I file deployati seguono una struttura organizzata per utente e sessione:</p>
+    <pre style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;font-size:.88rem;color:var(--text);">
+./deploy/
+├── {user_id}/
+│   ├── {session_id_1}/
+│   │   ├── index.html
+│   │   ├── style.css
+│   │   └── script.js
+│   └── {session_id_2}/
+│       └── ...
+    </pre>
+
+    <h3>Persistenza Dati</h3>
+    <p>CertainThing utilizza file JSON per tutta la persistenza — nessun database SQL richiesto. Questo significa:</p>
+    <ul>
+        <li><strong>Zero configurazione</strong> — niente MySQL, PostgreSQL o MongoDB da installare</li>
+        <li><strong>Portabilità totale</strong> — copia la cartella e hai un backup completo</li>
+        <li><strong>Leggibilità</strong> — i dati sono ispezionabili direttamente con un editor di testo</li>
+        <li><strong>Hosting minimale</strong> — funziona su qualsiasi hosting con PHP, anche i più economici</li>
+    </ul>
+</section>
+
+<!-- ==================== DEMO ==================== -->
+<section id="demo" class="centered">
+    <h2>Demo Video</h2>
+    <p>Guarda come CertainThing trasforma un semplice prompt in un'applicazione multi-pagina, e come la pubblica online in 1 secondo.</p>
+    <div class="video-wrap">
+        <video width="100%" controls>
+            <source src="https://www.vivacitydesign.net/vd_ai_division/vd-ai-certainthing/certainthing.mp4" type="video/mp4">
+            Il tuo browser non supporta il tag video.
+        </video>
+    </div>
+    <p>Immergiti in questo <em>Full Insight</em> di CertainThing prodotto con <strong>NotebookLM</strong>.</p>
+    <div class="video-wrap">
+        <video width="100%" controls>
+            <source src="https://www.vivacitydesign.net/certainThing/v1.2/certainthing/App_Live_in_60_Secondi.mp4" type="video/mp4">
+            Il tuo browser non supporta il tag video.
+        </video>
+    </div>        
+</section>
+
+<!-- ==================== FAQ ==================== -->
+<section id="faq">
+    <h2>Domande Frequenti</h2>
+
+    <div class="faq-item">
+        <h3>Cos'è il Vibe Coding?</h3>
+        <p>È un approccio allo sviluppo software dove il tuo intento creativo guida la creazione. Descrivi la tua app in linguaggio naturale e l'AI traduce la conversazione in codice funzionante, gestendo l'implementazione tecnica mentre tu ti concentri sulla visione.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Che tipo di input supporta?</h3>
+        <p>CertainThing è multimodale: accetta testo naturale, immagini, documenti di testo e URL. Puoi caricare uno screenshot di un design, un file con specifiche o l'URL di un sito esistente per fornire contesto all'AI.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Devo saper programmare?</h3>
+        <p>No. CertainThing è progettato per tutti — dal principiante assoluto allo sviluppatore esperto. Se sai descrivere quello che vuoi, puoi usarlo. Il Reasoning Pane ti mostra cosa sta facendo l'AI ad ogni passaggio.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Quanto costa davvero?</h3>
+        <p>L'abbonamento è <strong>€4.99/mese</strong> con 7 giorni di prova gratuita. L'AI funziona con la tua API Key OpenAI (modello <code>gpt-5-nano</code>): paghi solo i token che consumi, circa <strong>$0.25 per 1M di token</strong>. Nessun credito, nessun blocco, nessun costo nascosto.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Perché è meglio dei competitor più famosi?</h3>
+        <p>Tre motivi concreti: <strong>1)</strong> Costa 4-10 volte meno senza limiti di token. <strong>2)</strong> Genera codice vanilla che funziona ovunque, non codice legato a framework specifici. <strong>3)</strong> Zero configurazione — apri il browser e lavori. Non serve installare nulla.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Su che hosting posso pubblicare le app create?</h3>
+        <p>Su qualsiasi hosting che supporti PHP — anche i piani gratuiti o da €1-2/mese. Non serve Node.js, non servono container Docker, non serve serverless. Un normalissimo hosting condiviso basta.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Posso usare il codice generato per progetti commerciali?</h3>
+        <p>Sì. Il codice generato è tuo. Puoi usarlo, modificarlo e distribuirlo per qualsiasi scopo, personale o commerciale.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>Come funziona il sistema BYOK?</h3>
+        <p>BYOK sta per <em>"Bring Your Own Key"</em>. Nella configurazione inserisci la tua API Key di OpenAI. L'AI di CertainThing usa il modello <code>gpt-5-nano</code> tramite la tua chiave — i costi dei token vengono addebitati direttamente sul tuo account OpenAI, dandoti pieno controllo e trasparenza sui consumi.</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>CertainThing è sicuro?</h3>
+        <p>Sì. L'autenticazione usa <em>bcrypt hash</em>, i percorsi dei file sono protetti contro path traversal, e la tua API Key è salvata nel tuo profilo utente — non viene condivisa con nessuno. Tutti i dati risiedono sul server di CertainThing, non su servizi terzi (salvo le chiamate API a OpenAI per la generazione).</p>
+    </div>
+
+    <div class="faq-item">
+        <h3>È già disponibile?</h3>
+        <p>Sì. CertainThing è in early access beta. Puoi registrarti gratuitamente e provarlo per 7 giorni senza impegno.</p>
+    </div>
+</section>
+
+<!-- ==================== CTA ==================== -->
+<section id="inizia" class="centered">
+    <div class="cta-box">
+        <h2>Pronto a Costruire?</h2>
+        <p style="font-size:1.1rem;max-width:600px;margin:0 auto 1rem;text-align:center;">
+            7 giorni gratuiti. Nessuna carta di credito richiesta per la prova.<br>
+            Poi solo <strong>€4.99/mese</strong> — il prezzo di un caffè e cornetto.
+        </p>
+        <p style="color:var(--muted);font-size:.95rem;margin-bottom:1.5rem;text-align:center;">
+            Unisciti ai primi utenti italiani che stanno già costruendo con CertainThing.
+        </p>
+        <a href="https://www.vivacitydesign.net/certainThing/v1.2/certainthing/register.php" class="btn" target="_blank">🚀 Crea il Tuo Account Gratuito</a>
+    </div>
+</section>
+
+<!-- ==================== GEO SEO TEXT ==================== -->
+<div class="geo-section">
+        <div class="inner">
+            <h2>I Primi Risultati di CertainThing</h2>
+            <h3>Dati di Early Access</h3>
+            <p>Nelle prime 24 ore di Early Access, CertainThing ha registrato 15 nuovi utenti, di cui il 20% provenienti da mercati internazionali. Il dato più significativo: il 27% degli utenti ha scelto di passare al piano a pagamento entro poche ore dal primo utilizzo, un tasso di conversione che supera ampiamente gli standard del settore.</p>
+
+            <h3>Il Riscontro della Community</h3>
+            <p>In questa prima fase abbiamo ricevuto 8 contributi via email, tra segnalazioni tecniche, suggerimenti per le roadmap future e apprezzamenti sul prodotto. Il feedback più ricorrente ha evidenziato due aspetti: la versatilità dello strumento e l'immediatezza dell'esperienza utente, risultati che confermano la validità dell'approccio progettuale adottato.</p>
+        </div>
+</div>
+
+<!-- ==================== FOOTER ==================== -->
+<footer>
+    <div style="font-size:1.1rem;font-weight:700;margin-bottom:.5rem;color:var(--text);">
+        VIVACITY DESIGN <span style="color:var(--accent);">AI DIVISION</span>
+    </div>
+    <p>Eccellenza digitale e Intelligenza Artificiale integrata.</p>
+    <p style="margin-top:.8rem;">
+        <a href="https://www.vivacitydesign.net/vd_ai_division/" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.15em;">Torna a Vivacity Design AI Division</a>
+    </p>
+    <p style="margin-top:.5rem;">
+        <a href="tos.html">Terms of Service</a> &nbsp;|&nbsp; <a href="privacy.html">Privacy Policy</a>
+    </p>
+    <span style="color:#aaa;"><script type="text/javascript" src="https://www.vivacitydesign.net/counter/counter.php?page=certainthingpromocount"></script></span><br>    
+    <p style="margin-top:1rem;color:var(--muted);font-size:.75rem;">© 2026 — Vivacity Design AI Division. All Rights Reserved.</p>
+</footer>
+
 </body>
 </html>
