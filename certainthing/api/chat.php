@@ -289,11 +289,29 @@ reasoning_step(
     'context_prep', 'token_estimate'
 );
 
-$openai_key = get_openai_api_key();
+$keyInfo    = get_openai_api_key_with_source();
+$openai_key = $keyInfo['key'];
+$key_source = $keyInfo['source'];
+
 if ($openai_key === '') {
-    send_event('error', 'OpenAI API key not configured');
+    $userMode = $_SESSION['user_mode'] ?? 'trial';
+    if ($userMode === 'trial') {
+        send_event('error', 'No shared API key configured. Contact the admin.');
+    } else {
+        send_event('error', 'OpenAI API key not configured. Add your key via the 🔑 button.');
+    }
     exit;
 }
+
+// Mostra sorgente + preview della chiave nel pannello reasoning
+$keyPreview  = substr($openai_key, 0, 15) . '...';
+$sourceLabel = match($key_source) {
+    'user'   => "🔑 Your key · {$keyPreview}",
+    'shared' => "🔑 Shared key (trial) · {$keyPreview}",
+    'env'    => "🔑 Server env key · {$keyPreview}",
+    default  => '🔑 Key source unknown',
+};
+reasoning_step($sourceLabel, 'api_key_source', 'config');
 
 // ═══════════════════════════════════════════════════
 //  &#x1F680; STEP 6 &mdash; Call model
