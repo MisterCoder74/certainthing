@@ -1,0 +1,54 @@
+Stima lavoro — dal più facile al più complesso
+0. [PREREQUISITO] Controllo paid / pro_paid — S (2–3h)
+Aggiungere campo plan: "free" | "base" | "pro" a users.json + helper getPlan($user) globale + gate UI (lucchetto / badge "Pro" su feature bloccate). Tutto il resto dipende da questo.
+
+1. Rinomina sessioni (Base) — S (2–3h)
+Salva un campo name nel file di metadati della sessione (o in un sessions_meta.json per utente). UI: click sul nome sessione → input inline. Nessuna dipendenza oltre al piano.
+
+2. Extended Prompt Library (Pro) — S (2–3h)
+Aggiungere categorie extra a prompts_library.json + lock UI sulle categorie Pro se plan !== "pro". La struttura JS è già pronta.
+
+Dipende da: 0
+
+3. Fork / Duplicate sessione (Base) — M (4–6h)
+Copia ricorsiva dei file di sessione in nuovo session_id, nome default {nome_originale}_fork. Serve metadata della sessione per leggere il nome.
+
+Dipende da: 0, 1
+
+4. Collaboration Link in/out (Pro) — M-L (8–12h)
+Out: genera token univoco → salva mapping token → {user_id, session_id} in data/share_tokens.json → link condivisibile
+In: import ZIP della sessione altrui (o JSON manifest) → crea nuova sessione nell'account del destinatario
+Attenzione: serve decidere cosa si condivide (solo file generati? anche conversazione?)
+Dipende da: 0, 1, 3 (struttura file sessione già matura)
+
+5. Export to WordPress (Pro) — M-L (8–14h)
+Due livelli di complessità:
+
+Easy path: wrappa l'HTML generato in un template page.php WP + style.css base → ZIP scaricabile come tema minimo
+Hard path: WP REST API per push diretto su un'installazione WP dell'utente (richiede URL + credenziali WP)
+Consiglio: partire dall'easy path (tema ZIP).
+
+Dipende da: 0
+
+6. MCP Server connection (Pro) — XL (3–7 giorni, ricerca inclusa)
+MCP (Model Context Protocol di Anthropic) permette al modello di usare tool esterni (browser, file system, API). Le opzioni con API gratuite:
+
+Browserbase / Playwright MCP — computer usage nel browser (free tier limitato)
+Filesystem MCP — già sul server, integrazione diretta
+Self-hosted MCP server — zero costo ma setup complesso
+La complessità vera è lato chat.php: gestire il loop tool-call → execute → feed back al modello, che è diverso dal flusso SSE attuale. Non è impossibile ma è il lavoro più lungo e rischioso.
+
+Dipende da: 0 + refactor parziale di chat.php
+
+Riepilogo dipendenze
+code
+
+0. Plan control
+├── 1. Rename sessions
+│   └── 3. Fork/Duplicate
+│       └── 4. Collaboration Link
+├── 2. Extended Prompt Library
+├── 5. Export to WordPress
+└── 6. MCP (+ refactor chat.php)
+Percorso minimo per rilasciare Base funzionante: 0 → 1 → 3
+Percorso minimo per rilasciare Pro completo (escluso MCP): 0 → 1 → 2 → 3 → 4 → 5
