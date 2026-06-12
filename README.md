@@ -4,6 +4,13 @@ AI-powered vibe coding assistant with multimodal input, website analysis, conver
 
 ## Current Status
 
+**BYOK (Bring Your Own Key) + Key Status** implemented:
+- **Key cascade**: per-user key → shared admin key → env var → error. Invalid/empty key files are skipped (no false positives).
+- **Key validation**: `is_valid_openai_key()` rejects empty files, placeholders (`*`), and malformed strings.
+- **Source transparency**: `get_openai_api_key_with_source()` returns key + source (`user|shared|env|none`). Reasoning panel shows `🔑 [source] · sk-xxxx...` on every request.
+- **Modal key status**: `save_api_key.php` GET now returns `key_preview` (first 15 chars), `is_trial`, and `show_shared_warning`. UI can show ⚠️ trial warning when on shared key.
+- **JS snippet**: `scripts/key_status_snippet.js` — drop-in modal handler with key preview + shared-key trial warning banner.
+
 **Phase 8 — Documentation & Handoff** implemented:
 - Added full project documentation page at [`certainthing/doc.html`](certainthing/doc.html).
 - Includes architecture notes, full file tree with descriptions, function reference by file, use cases, feature flows, and end-to-end prompt-to-deploy workflow.
@@ -45,13 +52,13 @@ AI-powered vibe coding assistant with multimodal input, website analysis, conver
 
 ## Requirements
 - PHP 8.x with `curl`, `json`, `mbstring`, `xml`, `zip` extensions.
-- OpenAI API Key set in `OPENAI_API_KEY` environment variable.
+- OpenAI API Key set in `OPENAI_API_KEY` environment variable or per-user via the 🔑 modal.
 
 ## Setup
 1. Clone the repository.
-2. Ensure `certainthing/data` is writable by the web server.
+2. Ensure `certainthing/data` and `certainthing/data/keys` are writable by the web server.
 3. Configure your web server to point to the `certainthing/` directory or access it via `/certainthing/`.
-4. Set the `OPENAI_API_KEY` environment variable.
+4. Optionally set the `OPENAI_API_KEY` environment variable as a shared fallback key (or place it in `certainthing/data/shared_key.txt`).
 5. The `certainthing/deploy/` directory will be created automatically on first deploy.
 
 ## Usage
@@ -59,4 +66,5 @@ AI-powered vibe coding assistant with multimodal input, website analysis, conver
 - Start chatting in `index.php`.
 - Use the sidebar (☰) to manage sessions.
 - Press **F10** or click **🚀 Deploy** to deploy generated code live.
-- View the AI's reasoning in the right pane on the right (toggle with 🧠 on mobile).
+- View the AI's reasoning in the right pane (toggle with 🧠 on mobile).
+- Add your personal OpenAI key via the 🔑 button — or use the shared key during trial.
