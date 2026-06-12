@@ -162,6 +162,30 @@ padding:4px 6px;
 margin-right:2px;
 }   
             
+            
+/* ----- shared api key ---- */
+.key-status-box {
+    font-size: 0.82rem;
+    color: #888;
+    margin: 6px 0 2px;
+}
+.key-status-box code {
+    font-family: monospace;
+    background: rgba(255,255,255,0.06);
+    padding: 1px 5px;
+    border-radius: 3px;
+}
+.key-warning-box {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(255, 180, 0, 0.12);
+    border: 1px solid rgba(255, 180, 0, 0.35);
+    color: #f5c842;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+            
 @media screen and (max-width: 432px) {
 
         #attach-btn, #promptLibraryBtn, #stop-btn  {
@@ -398,6 +422,13 @@ display: none;
                     <input type="password" id="openai-api-key-input" placeholder="sk-..." autocomplete="new-password">
                 </div>
                 <div class="api-key-status" id="api-key-status"></div>
+                <div id="key-status-info" style="display:none;" class="key-status-box"></div>
+                 <div id="key-shared-warning" style="display:none;" class="key-warning-box">
+                 ⚠️ Uou are using a <strong>Shared Key</strong>.
+                 This API Key is only for evaluation.
+                 You will need to enter your API Key after evaluation expires.
+                 </div>    
+                    
                 <div class="modal-footer">
                     <button class="btn-small" type="button" id="api-key-cancel">Cancel</button>
                     <button class="btn-primary" type="button" id="api-key-save">Save Key</button>
