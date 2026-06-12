@@ -1376,36 +1376,57 @@ function handlePaste(e) {
         apiKeyStatus.style.color = isError ? 'var(--error-color)' : 'var(--reasoning-text)';
     }
 
-    async function openApiKeyModal() {
-        if (!apiKeyModal) return;
+async function openApiKeyModal() {
+    if (!apiKeyModal) return;
+    apiKeyModal.classList.remove('hidden');
+    if (apiKeyInput) apiKeyInput.value = '';
 
-        apiKeyModal.classList.remove('hidden');
-        if (apiKeyInput) {
-            apiKeyInput.value = '';
-            //apiKeyInput.focus();
+    setApiKeyStatus('Checking current key...');
+
+    try {
+        const response = await fetch('api/save_api_key.php', { cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to load key status');
+
+        // Stato testuale (logica esistente)
+        if (data.configured) {
+            setApiKeyStatus('API key configured.');
+        } else {
+            setApiKeyStatus('No API key saved. You can save one now.');
         }
 
-        setApiKeyStatus('Checking current key...');
+        // Key preview + trial warning (nuovo)
+        const statusBox  = document.getElementById('key-status-info');
+        const warningBox = document.getElementById('key-shared-warning');
 
-        try {
-            const response = await fetch('api/save_api_key.php', { cache: 'no-store' });
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to load key status');
-            }
-
-            if (data.configured) {
-                const source = data.source === 'file' ? 'saved on server' : 'environment';
-                const masked = data.masked_key ? ` (${data.masked_key})` : '';
-                setApiKeyStatus(`API key configured.`);
+        if (statusBox) {
+            if (data.configured && data.key_preview) {
+                const sourceLabels = {
+                    user:   '🔑 Chiave personale',
+                    shared: '🔑 Chiave condivisa (trial)',
+                    env:    '🔑 Chiave server',
+                };
+                const label = sourceLabels[data.source] || '🔑 Chiave configurata';
+                statusBox.innerHTML = `${label} &nbsp;·&nbsp; <code>${data.key_preview}</code>`;
+                statusBox.style.display = 'block';
             } else {
-                setApiKeyStatus('No API key saved. You can save one now.');
+                statusBox.style.display = 'none';
             }
-        } catch (err) {
-            console.error(err);
-            setApiKeyStatus('Failed to read current key status.', true);
         }
+
+        if (warningBox) {
+            warningBox.style.display = data.show_shared_warning ? 'block' : 'none';
+        }
+
+        const maskedField = document.getElementById('current-api-key');
+        if (maskedField) maskedField.value = data.masked_key || '';
+
+    } catch (err) {
+        console.error(err);
+        setApiKeyStatus('Failed to read current key status.', true);
     }
+}
+ 
 
     function closeApiKeyModal() {
         if (!apiKeyModal) return;
