@@ -62,6 +62,11 @@ function get_openai_api_key() {
     if ($file && file_exists($file)) {
         return trim(file_get_contents($file));
     }
+    // 2. Chiave condivisa (admin) su file
+    $sharedFile = __DIR__ . '/../data/shared_key.txt';
+    if (file_exists($sharedFile)) {
+        return trim(file_get_contents($sharedFile));
+    }    
     // Fallback: variabile d'ambiente globale (admin default)
     return getenv('OPENAI_API_KEY') ?: '';
 }
@@ -109,16 +114,16 @@ function safe_write_json($file, $data) {
     return true;
 }
 
-/* PRODUCTION 
-define('STRIPE_SECRET_KEY',      'sk_live_');
-define('STRIPE_PUBLISHABLE_KEY', 'pk_live_');
-*/
-/* TEST */
-define('STRIPE_SECRET_KEY',      'sk_test_');
-define('STRIPE_PUBLISHABLE_KEY', 'pk_test_');
+/* PRODUCTION */
+define('STRIPE_SECRET_KEY',      'sk_live_*');
+define('STRIPE_PUBLISHABLE_KEY', 'pk_live_*');
 
-define('STRIPE_WEBHOOK_SECRET',  'whsec_');    // dopo aver creato il webhook
-define('STRIPE_PRICE_ID',        'price_');
+/* TEST 
+define('STRIPE_SECRET_KEY',      'sk_test_*');
+define('STRIPE_PUBLISHABLE_KEY', 'pk_test_*');
+*/
+define('STRIPE_WEBHOOK_SECRET',  'whsec_*');    // dopo aver creato il webhook
+define('STRIPE_PRICE_ID',        'price_*');
 // URL base dell'app — usato per i redirect Stripe
 define('BASE_URL', 'https://www.vivacitydesign.net/certainThing/v1.2/certainthing');
 

@@ -7,6 +7,12 @@ header('Cache-Control: no-cache');
 header('Connection: keep-alive');
 header('X-Accel-Buffering: no');
 
+ini_set('output_buffering', 'off');
+ini_set('zlib.output_compression', false);
+if (function_exists('apache_setenv')) {
+    apache_setenv('no-gzip', '1');
+}
+
 check_auth();
 
 function reasoning_step($text, $action = 'system', $resource = '', $model = '', $streaming = false) {
@@ -28,7 +34,7 @@ function summarize_prompt($prompt, $maxLen = 80) {
 
     $clean = preg_replace('/\s+/', ' ', $prompt);
     if (mb_strlen($clean) > $maxLen) {
-        return mb_substr($clean, 0, $maxLen) . '…';
+        return mb_substr($clean, 0, $maxLen) . '&hellip;';
     }
 
     return $clean;
@@ -80,6 +86,13 @@ function extract_generated_filenames($text) {
     return $files;
 }
 
+// ─── Format a byte count into human-readable size ───
+function format_bytes($bytes) {
+    if ($bytes < 1024) return $bytes . ' B';
+    if ($bytes < 1048576) return round($bytes / 1024, 1) . ' KB';
+    return round($bytes / 1048576, 2) . ' MB';
+}
+
 send_event('status', 'Thinking');
 
 $user_id = $_SESSION['user_id'];
@@ -102,46 +115,90 @@ if (trim($message) === '' && empty($attachments)) {
     exit;
 }
 
+// ═══════════════════════════════════════════════════
+//  &#x1F4E5; STEP 1 &mdash; Parse &amp; analyze user input
+// ═══════════════════════════════════════════════════
 $promptSummary = summarize_prompt($message);
+$charCount = mb_strlen(trim($message));
+$wordCount = str_word_count($message);
+
 if ($promptSummary !== '') {
-    reasoning_step('Processing prompt: "' . $promptSummary . '"', 'prompt_process', 'User prompt');
+    reasoning_step(
+        '&#x1F4E5; Received prompt: &ldquo;' . $promptSummary . '&rdquo;',
+        'prompt_process', 'User prompt'
+    );
+    reasoning_step(
+        '&#x1F4CF; Input analysis: ' . number_format($charCount) . ' chars &middot; ' . number_format($wordCount) . ' words',
+        'input_stats', 'prompt_metrics'
+    );
 }
 
 $processed_message = $message;
 $has_images = false;
 $image_attachments = [];
 
+// ═══════════════════════════════════════════════════
+//  &#x1F4CE; STEP 2 &mdash; Process attachments
+// ═══════════════════════════════════════════════════
 if (!empty($attachments)) {
+    reasoning_step(
+        '&#x1F4CE; Processing ' . count($attachments) . ' attachment(s)&hellip;',
+        'attachments_start', 'file_processor'
+    );
     foreach ($attachments as $att) {
         $attName = $att['name'] ?? 'attachment';
         if (!empty($att['is_image'])) {
             $has_images = true;
             $image_attachments[] = $att['content'] ?? '';
-            reasoning_step('Loading image: ' . $attName, 'image_load', $attName);
+            reasoning_step(
+                '&#x1F5BC;&#xFE0F; Image loaded: ' . $attName . ' &rarr; vision pipeline ready',
+                'image_load', $attName
+            );
         } else {
-            reasoning_step('Loading file: ' . $attName, 'file_load', $attName);
+            $attSize = mb_strlen($att['content'] ?? '');
+            reasoning_step(
+                '&#x1F4C4; File loaded: ' . $attName . ' (' . format_bytes($attSize) . ')',
+                'file_load', $attName
+            );
             $processed_message .= "\n\n--- ATTACHED FILE: {$attName} ---\n" . ($att['content'] ?? '') . "\n--- END OF FILE ---";
         }
     }
 }
 
+// ═══════════════════════════════════════════════════
+//  &#x1F310; STEP 3 &mdash; Web scraping
+// ═══════════════════════════════════════════════════
 if (!empty($urls)) {
+    reasoning_step(
+        '&#x1F310; Fetching ' . count($urls) . ' web source(s)&hellip;',
+        'web_start', 'scraper'
+    );
     foreach ($urls as $url) {
-        reasoning_step('Fetching website: ' . $url, 'web_fetch', $url);
+        reasoning_step('&#x1F50D; Connecting to: ' . $url, 'web_fetch', $url);
         $scrape_result = scrape_url($url);
         if (!empty($scrape_result['success'])) {
             $scraped_title = $scrape_result['title'] ?? $url;
             $scraped_content = $scrape_result['content'] ?? '';
+            $scraped_words = str_word_count($scraped_content);
             $processed_message .= "\n\n--- WEBSITE CONTENT: {$scraped_title} ({$url}) ---\n{$scraped_content}\n--- END OF CONTENT ---";
-            reasoning_step('Fetched website content: ' . $url, 'web_fetch_success', $url);
+            reasoning_step(
+                '&#x2705; Fetched: &ldquo;' . $scraped_title . '&rdquo; &mdash; ' . number_format($scraped_words) . ' words extracted',
+                'web_fetch_success', $url
+            );
         } else {
             $reason = $scrape_result['error'] ?? 'Unknown error';
-            reasoning_step('Failed to fetch website: ' . $url . ' - ' . $reason, 'web_fetch_failed', $url);
+            reasoning_step(
+                '&#x26A0;&#xFE0F; Fetch failed: ' . $url . ' &mdash; ' . $reason,
+                'web_fetch_failed', $url
+            );
         }
     }
 }
 
-reasoning_step('Loading session: ' . $session_id, 'session_load', $session_id);
+// ═══════════════════════════════════════════════════
+//  &#x1F4C2; STEP 4 &mdash; Load conversation session
+// ═══════════════════════════════════════════════════
+reasoning_step('&#x1F4C2; Loading session: ' . $session_id, 'session_load', $session_id);
 $session_file = SESSIONS_DIR . '/' . $user_id . '_' . $session_id . '.json';
 $session_data = safe_read_json($session_file);
 
@@ -152,9 +209,22 @@ if (empty($session_data)) {
         'created_at' => date('c'),
         'messages' => []
     ];
+    reasoning_step(
+        '&#x2728; New session created &mdash; starting fresh conversation',
+        'session_new', $session_id
+    );
+} else {
+    $msgCount = count($session_data['messages']);
+    reasoning_step(
+        '&#x1F4AC; Session loaded: ' . $msgCount . ' messages in history',
+        'session_info', $session_id
+    );
 }
 
-reasoning_step('Preparing system prompt', 'prompt_load', 'system_prompt.txt');
+// ═══════════════════════════════════════════════════
+//  &#x1F9E0; STEP 5 &mdash; Build context &amp; system prompt
+// ═══════════════════════════════════════════════════
+reasoning_step('&#x1F4DC; Loading system prompt&hellip;', 'prompt_load', 'system_prompt.txt');
 $system_prompt = file_get_contents(PROMPTS_DIR . '/system_prompt.txt');
 $messages = [
     ['role' => 'developer', 'content' => $system_prompt]
@@ -202,9 +272,22 @@ if ($has_images) {
         ];
     }
     $messages[] = ['role' => 'user', 'content' => $user_content];
+    reasoning_step(
+        '&#x1F441;&#xFE0F; Vision mode enabled: ' . count($image_attachments) . ' image(s) in payload',
+        'vision_mode', 'multimodal'
+    );
 } else {
     $messages[] = ['role' => 'user', 'content' => $processed_message];
 }
+
+// ─── Context size estimate ───
+$contextJson = json_encode($messages);
+$contextBytes = strlen($contextJson);
+$tokenEstimate = (int)($contextBytes / 4);
+reasoning_step(
+    '&#x1F9E9; Context assembled: ~' . number_format($tokenEstimate) . ' tokens &middot; ' . count($messages) . ' messages &middot; ' . format_bytes($contextBytes),
+    'context_prep', 'token_estimate'
+);
 
 $openai_key = get_openai_api_key();
 if ($openai_key === '') {
@@ -212,7 +295,17 @@ if ($openai_key === '') {
     exit;
 }
 
-reasoning_step('Calling model: ' . $model, 'model_call', 'chat.completions', $model);
+// ═══════════════════════════════════════════════════
+//  &#x1F680; STEP 6 &mdash; Call model
+// ═══════════════════════════════════════════════════
+reasoning_step(
+    '&#x1F680; Calling model: ' . $model . ' &rarr; max ' . number_format(28000) . ' completion tokens',
+    'model_call', 'chat.completions', $model
+);
+reasoning_step(
+    '&#x26A1; Streaming connection established &mdash; waiting for first token&hellip;',
+    'stream_start', 'chat.completions', $model, true
+);
 
 $ch = curl_init('https://api.openai.com/v1/chat/completions');
 $post_data = [
@@ -220,7 +313,7 @@ $post_data = [
     'messages' => $messages,
     'stream' => true,
     'stream_options' => ['include_usage' => true],
-    'max_completion_tokens' => 10000
+    'max_completion_tokens' => 28000
 ];
 
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -237,6 +330,7 @@ $full_response = '';
 $buffer = '';
 $json_buffer = '';
 $request_cancelled = false;
+$stream_start_time = microtime(true);
 
 curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use (&$full_response, &$buffer, &$json_buffer, &$request_cancelled, $model) {
     if (connection_aborted()) {
@@ -259,7 +353,11 @@ curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use (&$full_respon
                 continue;
             }
 
-            $eventData .= trim(substr($line, 5));
+                $rawData = substr($line, 5);
+                if (strlen($rawData) > 0 && $rawData[0] === ' ') {
+                    $rawData = substr($rawData, 1);
+                }
+                $eventData .= $rawData;
         }
 
         if ($eventData === '') {
@@ -318,6 +416,8 @@ $curl_error = curl_error($ch);
 $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
+$stream_elapsed = round(microtime(true) - $stream_start_time, 2);
+
 if (connection_aborted() || $request_cancelled) {
     exit;
 }
@@ -340,12 +440,44 @@ if (trim($full_response) === '') {
     exit;
 }
 
+// ═══════════════════════════════════════════════════
+//  &#x1F4CA; STEP 7 &mdash; Analyze response
+// ═══════════════════════════════════════════════════
+$responseWords = str_word_count($full_response);
+$responseChars = mb_strlen($full_response);
+$responseLines = substr_count($full_response, "\n") + 1;
+
+reasoning_step(
+    '&#x2705; Response complete in ' . $stream_elapsed . 's &mdash; ' . number_format($responseWords) . ' words &middot; ' . number_format($responseChars) . ' chars &middot; ' . number_format($responseLines) . ' lines',
+    'response_stats', 'output', $model
+);
+
+// ═══════════════════════════════════════════════════
+//  &#x1F4C1; STEP 8 &mdash; Detect generated files
+// ═══════════════════════════════════════════════════
 $generatedFiles = extract_generated_filenames($full_response);
-foreach ($generatedFiles as $fileName) {
-    reasoning_step('Creating file: ' . $fileName, 'file_create', $fileName, $model);
+if (!empty($generatedFiles)) {
+    reasoning_step(
+        '&#x1F50E; Detected ' . count($generatedFiles) . ' generated file(s) in response',
+        'file_detect', 'code_analysis', $model
+    );
+    foreach ($generatedFiles as $fileName) {
+        reasoning_step(
+            '&#x1F4BE; Creating file: ' . $fileName,
+            'file_create', $fileName, $model
+        );
+    }
+} else {
+    reasoning_step(
+        '&#x1F4DD; Text-only response &mdash; no files detected',
+        'response_type', 'text', $model
+    );
 }
 
-reasoning_step('Saving session: ' . $session_id, 'session_save', $session_id);
+// ═══════════════════════════════════════════════════
+//  &#x1F4BE; STEP 9 &mdash; Save session
+// ═══════════════════════════════════════════════════
+reasoning_step('&#x1F4BE; Saving session: ' . $session_id, 'session_save', $session_id);
 $session_data['messages'][] = [
     'role' => 'user',
     'content' => $message,
@@ -361,5 +493,14 @@ $session_data['updated_at'] = date('c');
 
 safe_write_json($session_file, $session_data);
 
-reasoning_step('Done.', 'done', 'Response ready', $model);
+$totalMessages = count($session_data['messages']);
+reasoning_step(
+    '&#x2705; Session saved &mdash; ' . $totalMessages . ' messages total',
+    'session_saved', $session_id
+);
+
+// ═══════════════════════════════════════════════════
+//  &#x1F3C1; DONE
+// ═══════════════════════════════════════════════════
+reasoning_step('&#x1F3C1; Done.', 'done', 'Response ready', $model);
 send_event('status', 'Done');

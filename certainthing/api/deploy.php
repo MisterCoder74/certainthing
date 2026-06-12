@@ -69,11 +69,47 @@ foreach ($files as $file) {
             continue;
         }
     }
+        
+        // ── Remap image paths for deploy ─────────────────
+        $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+        if (in_array($ext, ['html', 'htm', 'php', 'css'])) {
+            $content = str_replace('assets/images/', 'images/', $content);
+        }
+        // ── Fine remap ───────────────────────────────────
+        
 
     if (file_put_contents($filepath, $content) !== false) {
         $written_files[] = $name;
     }
 }
+// ── COPY PROJECT IMAGES TO DEPLOY FOLDER ──────────────────────────────────
+$images_source = __DIR__ . '/../assets/images';  // cartella sorgente immagini
+if (is_dir($images_source)) {
+    $images_dest = $deploy_dir . '/images';
+    if (!is_dir($images_dest)) {
+        mkdir($images_dest, 0755, true);
+    }
+    
+    $image_extensions = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico'];
+    $copied_images = [];
+    
+    $dir_iterator = new DirectoryIterator($images_source);
+    foreach ($dir_iterator as $fileInfo) {
+        if ($fileInfo->isDot() || $fileInfo->isDir()) continue;
+        
+        $ext = strtolower($fileInfo->getExtension());
+        if (in_array($ext, $image_extensions)) {
+            $src = $fileInfo->getPathname();
+            $dst = $images_dest . '/' . $fileInfo->getFilename();
+            if (copy($src, $dst)) {
+                $copied_images[] = $fileInfo->getFilename();
+            }
+        }
+    }
+}
+// ── FINE COPY PROJECT IMAGES ──────────────────────────────────────────────
+
+
 
 if (empty($written_files)) {
     http_response_code(500);
@@ -99,6 +135,7 @@ echo json_encode([
     'success' => true,
     'files' => $written_files,
     'count' => count($written_files),
+    'images_copied' => $copied_images ?? [],
     'deploy_path' => '/deploy/' . $user_id . '/' . $session_id,
     'view_url' => $view_url
 ]);
