@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isDeploying = false;
     let isGenerating = false;
     let currentStreamController = null;
+    let pastedImageCounter = 0;    
 
     // Initial Load
     loadSession(currentSessionId);
@@ -108,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key !== 'Escape') return;
 
         if (rightPane.classList.contains('show-reasoning')) {
+                e.preventDefault();
             rightPane.classList.remove('show-reasoning');
         }
 
@@ -132,6 +134,38 @@ document.addEventListener('DOMContentLoaded', () => {
     deployBtn.addEventListener('click', () => {
         deployLatestCode();
     });
+        
+        
+        
+    // =============================================
+    // Paste Images
+    // =============================================    
+    chatInput.addEventListener('paste', handlePaste);
+
+function handlePaste(e) {
+    const items = [...(e.clipboardData?.items || [])];
+    const imageItems = items.filter(item => item.type.startsWith('image/'));
+    
+    if (imageItems.length === 0) return; // testo normale, lascia il default
+    
+    e.preventDefault();
+    
+    imageItems.forEach(item => {
+        const file = item.getAsFile();
+        if (!file) return;
+        
+        pastedImageCounter++;
+        const name = `pasted_image_${String(pastedImageCounter).padStart(2, '0')}`;
+        
+        // Rinomina il file (i pasted files hanno nomi generici tipo "image.png")
+        const ext = file.type.split('/')[1] || 'png';
+        const renamedFile = new File([file], `${name}.${ext}`, { type: file.type });
+        
+        // Riusa la stessa logica del bottone graffetta
+        uploadFile(renamedFile);
+    });
+}
+    
 
     // =============================================
     // Attachments
@@ -897,12 +931,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Add Export ZIP button for the group
                 const exportBtn = document.createElement('button');
                 exportBtn.className = 'zip-export-btn';
-                exportBtn.innerHTML = '<span>📦</span> Export all as ZIP';
+                exportBtn.innerHTML = '<span>📦</span> Export all as ZIP';    
                 exportBtn.addEventListener('click', () => {
-                    const files = group.map(c => ({
-                        name: c.dataset.file || 'unnamed_file',
-                        content: c.querySelector('code').textContent
-                    }));
+                    const panes = tabContainer.querySelectorAll('.code-pane');
+                    const files = Array.from(panes)
+                        .filter(p => p.querySelector('code'))
+                        .map(p => ({
+                            name: p.dataset.file || 'unnamed_file',
+                            content: p.querySelector('code').textContent
+                        }));
+                    if (files.length === 0) return;
                     exportAsZip(files);
                 });
                 tabContainer.appendChild(exportBtn);
@@ -910,12 +948,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Add GitHub Deploy button
                 const githubBtn = document.createElement('button');
                 githubBtn.className = 'github-deploy-btn';
-                githubBtn.innerHTML = '<span><svg height="16" viewBox="0 0 16 16" width="16" style="fill:currentColor;vertical-align:middle;margin-right:4px;"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg></span> Push to GitHub';
+                githubBtn.innerHTML = '<span><svg height="16" viewBox="0 0 16 16" width="16" style="fill:currentColor;vertical-align:middle;margin-right:4px;"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg></span> Push to GitHub';    
                 githubBtn.addEventListener('click', () => {
-                    const files = group.map(c => ({
-                        name: c.dataset.file || 'unnamed_file',
-                        content: c.querySelector('code').textContent
-                    }));
+                    const panes = tabContainer.querySelectorAll('.code-pane');
+                    const files = Array.from(panes)
+                        .filter(p => p.querySelector('code'))
+                        .map(p => ({
+                            name: p.dataset.file || 'unnamed_file',
+                            content: p.querySelector('code').textContent
+                        }));
+                    if (files.length === 0) return;
                     openGitHubModal(files);
                 });
                 tabContainer.appendChild(githubBtn);
@@ -1068,10 +1110,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="password" id="gh-pat" placeholder="ghp_xxxxxxxxxxxx" value="${localStorage.getItem('ct_gh_pat') || ''}">
             </div>
             <div class="form-group">
-                <label>Branch</label>
-                <input type="text" id="gh-branch" value="main">
-            </div>
-            <div class="form-group">
                 <label>Commit Message</label>
                 <input type="text" id="gh-message" value="Deploy from CertainThing">
             </div>
@@ -1089,10 +1127,10 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.querySelector('#gh-push').onclick = async () => {
             const repo = modal.querySelector('#gh-repo').value.trim();
             const pat = modal.querySelector('#gh-pat').value.trim();
-            const branch = modal.querySelector('#gh-branch').value.trim();
+            //const branch = modal.querySelector('#gh-branch').value.trim();
             const message = modal.querySelector('#gh-message').value.trim();
             
-            if (!repo || !pat || !branch) {
+            if (!repo || !pat ) {
                 showToast('Please fill all required fields', 'error');
                 return;
             }
@@ -1109,7 +1147,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch('api/github_push.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ repo, pat, branch, message, files })
+                    body: JSON.stringify({ repo, pat, message, files })
                 });
 
                 const result = await response.json();
@@ -1172,7 +1210,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (!html) {
-            previewIframe.srcdoc = '<html><body><p style="color: #666; font-family: sans-serif; padding: 20px;">No HTML found to preview. Try asking the AI to build an HTML page.</p></body></html>';
+            previewIframe.srcdoc = '<html><body><p style="color: #666; background: rgba(0,0,0,.35);  font-family: sans-serif; padding: 20px;">No HTML found to preview. Try asking the AI to build an HTML page.</p></body></html>';
             return;
         }
 
@@ -1236,7 +1274,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (canAppendToCurrent) {
             const main = lastStep.querySelector('.reasoning-step-main');
             if (main) {
-                main.textContent += text;
+                main.innerHTML += text;
             }
             const timeEl = lastStep.querySelector('.reasoning-time');
             if (timeEl) {
@@ -1256,7 +1294,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const main = document.createElement('div');
             main.className = 'reasoning-step-main';
-            main.textContent = text || action;
+            main.innerHTML = text || action;
 
             const meta = document.createElement('div');
             meta.className = 'reasoning-step-meta';
@@ -1344,7 +1382,7 @@ document.addEventListener('DOMContentLoaded', () => {
         apiKeyModal.classList.remove('hidden');
         if (apiKeyInput) {
             apiKeyInput.value = '';
-            apiKeyInput.focus();
+            //apiKeyInput.focus();
         }
 
         setApiKeyStatus('Checking current key...');
@@ -1532,15 +1570,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         assistantTextDiv.innerHTML = formatText(fullText);
                         messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-                        assistantBubble.querySelectorAll('pre code').forEach((block) => {
-                            if (!block.classList.contains('hljs')) {
-                                try {
-                                    hljs.highlightElement(block);
-                                } catch (e) {
-                                    // Ignore highlight errors during streaming
-                                }
-                            }
-                        });
                     } else if (data.type === 'status') {
                         applyStatus(data.text || 'Working');
                     } else if (data.type === 'usage') {
@@ -1550,7 +1579,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const prompt = data.usage.prompt_tokens || 0;
 
                             pendingUsageStep = {
-                                text: `Tokens used: ${total.toLocaleString()} (P: ${prompt.toLocaleString()}, C: ${completion.toLocaleString()})`,
+                                text: `Tokens used: ${total.toLocaleString()} (Prompt: ${prompt.toLocaleString()}, Completion: ${completion.toLocaleString()})`,
                                 action: 'token_usage',
                                 resource: 'OpenAI usage',
                                 model: data.model || '',
@@ -1635,3 +1664,140 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+(function() {
+    let libraryData = null;
+
+    // Crea il modale (inserito nel DOM una sola volta)
+    const modal = document.createElement('div');
+    modal.id = 'promptLibraryModal';
+    modal.innerHTML = `
+        <div class="pl-overlay"></div>
+        <div class="pl-container">
+            <div class="pl-header">
+                <h2>⚡ Prompt Library</h2>
+                <input type="text" id="plSearch" placeholder="Search prompts..." autocomplete="off" />
+                <button class="pl-close">&times;</button>
+            </div>
+            <div class="pl-body" id="plBody"></div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // CSS del modale
+    const style = document.createElement('style');
+    style.textContent = `
+        #promptLibraryModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; }
+        #promptLibraryModal.active { display:flex; align-items:center; justify-content:center; }
+        .pl-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); }
+        .pl-container { position:relative; background:#161b22; border:1px solid #30363d; border-radius:12px; width:90%; max-width:640px; max-height:75vh; display:flex; flex-direction:column; box-shadow:0 16px 48px rgba(0,0,0,0.4); }
+        .pl-header { display:flex; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid #30363d; flex-wrap:wrap; }
+        .pl-header h2 { margin:0; font-size:18px; color:#e6edf3; white-space:nowrap; }
+        #plSearch { flex:1; min-width:160px; padding:8px 12px; background:#0d1117; border:1px solid #30363d; border-radius:6px; color:#c9d1d9; font-size:14px; outline:none; }
+        #plSearch:focus { border-color:#58a6ff; }
+        .pl-close { background:none; border:none; color:#8b949e; font-size:24px; cursor:pointer; padding:0 4px; line-height:1; }
+        .pl-close:hover { color:#e6edf3; }
+        .pl-body { overflow-y:auto; padding:12px 20px 20px; }
+        .pl-category { margin-bottom:16px; }
+        .pl-category-title { font-size:15px; color:#58a6ff; margin-bottom:8px; cursor:pointer; user-select:none; }
+        .pl-category-title:hover { text-decoration:underline; }
+        .pl-prompt-card { background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:12px 14px; margin-bottom:8px; cursor:pointer; transition:border-color 0.15s, background 0.15s; }
+        .pl-prompt-card:hover { border-color:#58a6ff; background:#1c2333; }
+        .pl-prompt-card .pl-title { font-size:14px; font-weight:600; color:#e6edf3; margin-bottom:4px; }
+        .pl-prompt-card .pl-text { font-size:12px; color:#8b949e; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+        .pl-empty { text-align:center; color:#8b949e; padding:32px 0; font-size:14px; }
+    `;
+    document.head.appendChild(style);
+
+    // Funzioni
+    function openLibrary() {
+        if (!libraryData) {
+            fetch('prompts_library.json')
+                .then(r => r.json())
+                .then(data => { libraryData = data; renderCategories(''); })
+                .catch(() => { document.getElementById('plBody').innerHTML = '<div class="pl-empty">Failed to load prompts.</div>'; });
+        } else {
+            renderCategories('');
+        }
+        document.getElementById('plSearch').value = '';
+        modal.classList.add('active');
+        setTimeout(() => document.getElementById('plSearch').focus(), 100);
+    }
+
+    function closeLibrary() {
+        modal.classList.remove('active');
+    }
+
+    function renderCategories(filter) {
+        const body = document.getElementById('plBody');
+        const q = filter.toLowerCase().trim();
+        let html = '';
+        let totalMatches = 0;
+
+        libraryData.categories.forEach(cat => {
+            const prompts = cat.prompts.filter(p =>
+                !q || p.title.toLowerCase().includes(q) || p.text.toLowerCase().includes(q) || cat.name.toLowerCase().includes(q)
+            );
+            if (prompts.length === 0) return;
+            totalMatches += prompts.length;
+
+            html += `<div class="pl-category">`;
+            html += `<div class="pl-category-title">${cat.icon} ${cat.name}</div>`;
+            prompts.forEach(p => {
+                html += `<div class="pl-prompt-card" data-prompt="${escapeAttr(p.text)}">
+                    <div class="pl-title">${highlight(p.title, q)}</div>
+                    <div class="pl-text">${highlight(p.text, q)}</div>
+                </div>`;
+            });
+            html += `</div>`;
+        });
+
+        if (totalMatches === 0) {
+            html = '<div class="pl-empty">No prompts found.</div>';
+        }
+        body.innerHTML = html;
+    }
+
+    function escapeAttr(str) {
+        return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function highlight(text, q) {
+        if (!q) return text;
+        const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark style="background:#58a6ff33;color:#e6edf3;border-radius:2px;padding:0 1px;">$1</mark>');
+    }
+
+    function selectPrompt(promptText) {
+        const input = document.getElementById('chat-input'); 
+
+        if (input) {
+            input.value = promptText;
+            input.focus();
+            // Trigger input event per aggiornare eventuali binding
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        closeLibrary();
+    }
+
+    // Event listeners
+    document.getElementById('promptLibraryBtn').addEventListener('click', openLibrary);
+    modal.querySelector('.pl-overlay').addEventListener('click', closeLibrary);
+    modal.querySelector('.pl-close').addEventListener('click', closeLibrary);
+    document.getElementById('plSearch').addEventListener('input', function() {
+        renderCategories(this.value);
+    });
+    document.getElementById('plBody').addEventListener('click', function(e) {
+        const card = e.target.closest('.pl-prompt-card');
+        if (card) selectPrompt(card.dataset.prompt);
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.classList.contains('active')) closeLibrary();
+    });
+})();
+
+document.addEventListener('click', function(e) {
+    var popup = document.getElementById('userInfoPopup');
+    if (popup && !e.target.closest('.user-info-wrapper')) {
+        popup.classList.remove('show');
+    }
+});
