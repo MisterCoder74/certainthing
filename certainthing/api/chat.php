@@ -289,9 +289,14 @@ reasoning_step(
     'context_prep', 'token_estimate'
 );
 
-$keyInfo    = get_openai_api_key_with_source();
-$openai_key = $keyInfo['key'];
-$key_source = $keyInfo['source'];
+if (function_exists('get_openai_api_key_with_source')) {
+    $keyInfo    = get_openai_api_key_with_source();
+    $openai_key = $keyInfo['key'];
+    $key_source = $keyInfo['source'];
+} else {
+    $openai_key = get_openai_api_key();
+    $key_source = $openai_key !== '' ? 'user' : 'none';
+}
 
 if ($openai_key === '') {
     $userMode = $_SESSION['user_mode'] ?? 'trial';
