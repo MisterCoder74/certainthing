@@ -12,6 +12,9 @@ ini_set('zlib.output_compression', false);
 if (function_exists('apache_setenv')) {
     apache_setenv('no-gzip', '1');
 }
+echo str_repeat(' ', 2048) . "\n\n";
+ob_flush();
+flush();
 
 check_auth();
 
@@ -100,6 +103,8 @@ $message = $_POST['message'] ?? '';
 $session_id = $_POST['session_id'] ?? 'default';
 $attachments = isset($_POST['attachments']) ? json_decode($_POST['attachments'], true) : [];
 $urls = isset($_POST['urls']) ? json_decode($_POST['urls'], true) : [];
+$debug_mode = !empty($_POST['debug_mode']) && $_POST['debug_mode'] === '1';
+$debug_language = trim($_POST['debug_language'] ?? '');
 $model = 'gpt-5-nano';
 
 if (!is_array($attachments)) {
@@ -224,8 +229,14 @@ if (empty($session_data)) {
 // ═══════════════════════════════════════════════════
 //  &#x1F9E0; STEP 5 &mdash; Build context &amp; system prompt
 // ═══════════════════════════════════════════════════
-reasoning_step('&#x1F4DC; Loading system prompt&hellip;', 'prompt_load', 'system_prompt.txt');
-$system_prompt = file_get_contents(PROMPTS_DIR . '/system_prompt.txt');
+if ($debug_mode) {
+    $lang_hint = $debug_language ? ' &middot; Language: ' . htmlspecialchars($debug_language) : ' &middot; Language: auto-detect';
+    reasoning_step('&#x1F41B; Debug mode activated' . $lang_hint, 'debug_start', 'debugger');
+    $system_prompt = file_get_contents(PROMPTS_DIR . '/debug_prompt.txt');
+} else {
+    reasoning_step('&#x1F4DC; Loading system prompt&hellip;', 'prompt_load', 'system_prompt.txt');
+    $system_prompt = file_get_contents(PROMPTS_DIR . '/system_prompt.txt');
+}
 $messages = [
     ['role' => 'developer', 'content' => $system_prompt]
 ];
@@ -280,6 +291,20 @@ if ($has_images) {
     $messages[] = ['role' => 'user', 'content' => $processed_message];
 }
 
+// ─── Debug mode: code analysis steps ───
+if ($debug_mode) {
+    $line_count = max(1, substr_count($message, "\n") + 1);
+    $char_count  = strlen($message);
+    reasoning_step(
+        '&#x1F4CF; Code received &middot; ' . number_format($line_count) . ' lines &middot; ' . number_format($char_count) . ' chars',
+        'debug_analyze', 'code_parser'
+    );
+    reasoning_step(
+        '&#x1F50D; Sending to ' . $model . ' for empathetic analysis&hellip;',
+        'debug_send', $model
+    );
+}
+
 // ─── Context size estimate ───
 $contextJson = json_encode($messages);
 $contextBytes = strlen($contextJson);
@@ -308,6 +333,19 @@ if ($openai_key === '') {
     exit;
 }
 
+// ─── Token tier logic ────────────────────────────────────────────
+$userMode = $_SESSION['user_mode'] ?? 'trial';
+if ($userMode === 'paid') {
+    $max_tokens = 110000;
+    $token_tier = 'paid plan';
+} elseif ($key_source === 'user') {
+    $max_tokens = 64000;
+    $token_tier = 'BYOK';
+} else {
+    $max_tokens = 28000;
+    $token_tier = 'shared key';
+}
+
 // Mostra sorgente + preview della chiave nel pannello reasoning
 $keyPreview  = substr($openai_key, 0, 15) . '...';
 $sourceLabel = match($key_source) {
@@ -317,12 +355,16 @@ $sourceLabel = match($key_source) {
     default  => '🔑 Key source unknown',
 };
 reasoning_step($sourceLabel, 'api_key_source', 'config');
+reasoning_step(
+    '&#x1F3AB; Token budget: ' . number_format($max_tokens) . ' &middot; tier: ' . $token_tier,
+    'token_budget', 'config'
+);
 
 // ═══════════════════════════════════════════════════
 //  &#x1F680; STEP 6 &mdash; Call model
 // ═══════════════════════════════════════════════════
 reasoning_step(
-    '&#x1F680; Calling model: ' . $model . ' &rarr; max ' . number_format(28000) . ' completion tokens',
+    '&#x1F680; Calling model: ' . $model . ' &rarr; max ' . number_format($max_tokens) . ' completion tokens (' . $token_tier . ')',
     'model_call', 'chat.completions', $model
 );
 reasoning_step(
@@ -336,7 +378,7 @@ $post_data = [
     'messages' => $messages,
     'stream' => true,
     'stream_options' => ['include_usage' => true],
-    'max_completion_tokens' => 28000
+    'max_completion_tokens' => $max_tokens
 ];
 
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
