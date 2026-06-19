@@ -73,6 +73,7 @@ foreach ($files as $file) {
         // ── Remap image paths for deploy ─────────────────
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
         if (in_array($ext, ['html', 'htm', 'php', 'css'])) {
+            $content = str_replace('./assets/images/', './images/', $content);
             $content = str_replace('assets/images/', 'images/', $content);
         }
         // ── Fine remap ───────────────────────────────────
@@ -92,18 +93,23 @@ if (is_dir($images_source)) {
     
     $image_extensions = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico'];
     $copied_images = [];
-    
-    $dir_iterator = new DirectoryIterator($images_source);
-    foreach ($dir_iterator as $fileInfo) {
-        if ($fileInfo->isDot() || $fileInfo->isDir()) continue;
-        
+
+    $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($images_source));
+    foreach ($rii as $fileInfo) {
+        if ($fileInfo->isDir()) continue;
+
         $ext = strtolower($fileInfo->getExtension());
-        if (in_array($ext, $image_extensions)) {
-            $src = $fileInfo->getPathname();
-            $dst = $images_dest . '/' . $fileInfo->getFilename();
-            if (copy($src, $dst)) {
-                $copied_images[] = $fileInfo->getFilename();
-            }
+        if (!in_array($ext, $image_extensions)) continue;
+
+        // Preserve subfolder structure (e.g. heroes/image001.jpg)
+        $relative = substr($fileInfo->getPathname(), strlen($images_source) + 1);
+        $dst = $images_dest . '/' . $relative;
+        $dst_dir = dirname($dst);
+        if (!is_dir($dst_dir)) {
+            mkdir($dst_dir, 0755, true);
+        }
+        if (copy($fileInfo->getPathname(), $dst)) {
+            $copied_images[] = $relative;
         }
     }
 }
