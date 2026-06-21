@@ -22,11 +22,11 @@ if (
 ) {
     $lastPayment  = new DateTime($_SESSION['last_payment_at']);
     $today        = new DateTime('today');
-    $daysSince    = (int) $today->diff($lastPayment)->days;
-    $paidDaysLeft = min(30, max(0, 31 - $daysSince));
+    $expiryDate   = (clone $lastPayment)->modify('+1 month'); // calendar month, handles Feb/short months correctly
+    $paidExpired  = ($today >= $expiryDate);
+    $paidDaysLeft = $paidExpired ? 0 : (int) $today->diff($expiryDate)->days;
 
-    if ($daysSince > 30)        $paidExpired    = true;
-    elseif ($daysSince >= 25)   $paidEndingSoon = true;
+    if (!$paidExpired && $paidDaysLeft <= 5) $paidEndingSoon = true;
 }
 // ── FINE PAID CHECK ───────────────────────────────────────────────────────
 
@@ -48,15 +48,11 @@ if ($userMode === 'trial' && $userStatus === 'enabled') {
 
 } elseif ($userMode === 'paid' && $userStatus === 'enabled') {
     if (!empty($_SESSION['last_payment_at'])) {
-        $lastPayment = new DateTime($_SESSION['last_payment_at']);
-        $today       = new DateTime('today');
-        $daysSince   = (int) $today->diff($lastPayment)->days;
-        $remaining   = min(30, max(0, 31 - $daysSince));
-        $dotTitle    = "Paid Plan: {$remaining} days left";
+        $dotTitle = "Paid Plan: {$paidDaysLeft} days left";
 
-        if ($daysSince < 25)       $statusDot = 'green';
-        elseif ($daysSince <= 30)  $statusDot = 'orange';
-        else                       $statusDot = 'red';
+        if ($paidExpired)           $statusDot = 'red';
+        elseif ($paidDaysLeft <= 5) $statusDot = 'orange';
+        else                        $statusDot = 'green';
     } else {
         $statusDot = 'green';
         $dotTitle  = 'Plan active';
@@ -80,10 +76,7 @@ if ($userMode === 'trial' && !empty($_SESSION['user_created'])) {
     $diffDays = (int) $today->diff($created)->days;
     $userInfo['days_left'] = max(0, 7 - $diffDays) . ' days (trial)';
 } elseif ($userMode === 'paid' && !empty($_SESSION['last_payment_at'])) {
-    $lastPayment = new DateTime($_SESSION['last_payment_at']);
-    $today       = new DateTime('today');
-    $daysSince   = (int) $today->diff($lastPayment)->days;
-    $userInfo['days_left'] = min(30, max(0, 31 - $daysSince)) . ' days (subscription)';
+    $userInfo['days_left'] = $paidDaysLeft . ' days (subscription)';
 }
 // ── FINE USER INFO POPUP DATA ─────────────────────────────────────────────
 
