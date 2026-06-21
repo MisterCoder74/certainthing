@@ -25,7 +25,7 @@ if (
     $daysSince    = (int) $today->diff($lastPayment)->days;
     $paidDaysLeft = max(0, 30 - $daysSince);
 
-    if ($daysSince >= 30)       $paidExpired    = true;
+    if ($daysSince > 30)        $paidExpired    = true;
     elseif ($daysSince >= 25)   $paidEndingSoon = true;
 }
 // ── FINE PAID CHECK ───────────────────────────────────────────────────────
@@ -54,9 +54,9 @@ if ($userMode === 'trial' && $userStatus === 'enabled') {
         $remaining   = max(0, 30 - $daysSince);
         $dotTitle    = "Paid Plan: {$remaining} days left";
 
-        if ($daysSince < 25)      $statusDot = 'green';
-        elseif ($daysSince < 30)  $statusDot = 'orange';
-        else                      $statusDot = 'red';
+        if ($daysSince < 25)       $statusDot = 'green';
+        elseif ($daysSince <= 30)  $statusDot = 'orange';
+        else                       $statusDot = 'red';
     } else {
         $statusDot = 'green';
         $dotTitle  = 'Plan active';
