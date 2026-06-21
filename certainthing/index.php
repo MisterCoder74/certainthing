@@ -23,7 +23,7 @@ if (
     $lastPayment  = new DateTime($_SESSION['last_payment_at']);
     $today        = new DateTime('today');
     $daysSince    = (int) $today->diff($lastPayment)->days;
-    $paidDaysLeft = max(0, 30 - $daysSince);
+    $paidDaysLeft = min(30, max(0, 31 - $daysSince));
 
     if ($daysSince > 30)        $paidExpired    = true;
     elseif ($daysSince >= 25)   $paidEndingSoon = true;
@@ -51,7 +51,7 @@ if ($userMode === 'trial' && $userStatus === 'enabled') {
         $lastPayment = new DateTime($_SESSION['last_payment_at']);
         $today       = new DateTime('today');
         $daysSince   = (int) $today->diff($lastPayment)->days;
-        $remaining   = max(0, 30 - $daysSince);
+        $remaining   = min(30, max(0, 31 - $daysSince));
         $dotTitle    = "Paid Plan: {$remaining} days left";
 
         if ($daysSince < 25)       $statusDot = 'green';
@@ -83,7 +83,7 @@ if ($userMode === 'trial' && !empty($_SESSION['user_created'])) {
     $lastPayment = new DateTime($_SESSION['last_payment_at']);
     $today       = new DateTime('today');
     $daysSince   = (int) $today->diff($lastPayment)->days;
-    $userInfo['days_left'] = max(0, 30 - $daysSince) . ' days (subscription)';
+    $userInfo['days_left'] = min(30, max(0, 31 - $daysSince)) . ' days (subscription)';
 }
 // ── FINE USER INFO POPUP DATA ─────────────────────────────────────────────
 
