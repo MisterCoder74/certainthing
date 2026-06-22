@@ -40,7 +40,7 @@ Key cascade (in priority order):
 - **Text files**: `.txt`, `.html`, `.css`, `.js`, `.php` — injected as plain text
 - **URLs**: paste a link → server-side cURL scrape → raw HTML injected as AI context (~30KB truncation)
 
-### 🐛 Code Debugger
+### 🐛 Empathetic Debugger
 - Dedicated **🐛 button** in the input toolbar (same pattern as other tools)
 - **Language selector**: choose the target language/framework for the debug session
 - Separate `debug_prompt.txt` system prompt — isolated from the main coding prompt
