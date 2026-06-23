@@ -37,7 +37,8 @@ if (!is_dir($deploy_dir)) {
     mkdir($deploy_dir, 0755, true);
 }
 
-$written_files = [];
+$written_files     = [];
+$referenced_images = [];
 
 foreach ($files as $file) {
     $name    = $file['name']    ?? 'unnamed_file';
@@ -68,8 +69,20 @@ foreach ($files as $file) {
         }
     }
 
-    // ── Remap image paths for deploy ─────────────────────────────────────
     $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+    // ── Extract referenced images from ORIGINAL content ──────────────────
+    // Matches: assets/images/x  |  ./assets/images/x  |  /assets/images/x
+    // Captures the relative path AFTER assets/images/ (e.g. heroes/hero1.jpg)
+    if (in_array($ext, ['html', 'htm', 'php', 'css', 'js', 'json'])) {
+        preg_match_all('#[\'"\(](?:\.{0,2}/)?assets/images/([^\'")\s\?#]+)[\'"\)]#', $content, $matches);
+        foreach ($matches[1] as $imgPath) {
+            $referenced_images[] = ltrim($imgPath, '/\\');
+        }
+    }
+    // ── Fine estrazione immagini ──────────────────────────────────────────
+
+    // ── Remap image paths for deploy ─────────────────────────────────────
     if (in_array($ext, ['html', 'htm', 'php', 'css', 'js', 'json'])) {
         $content = str_replace('./assets/images/', './images/', $content);
         $content = str_replace('assets/images/',  'images/',   $content);
@@ -81,33 +94,24 @@ foreach ($files as $file) {
     }
 }
 
-// ── Copy ALL project images to deploy folder (recursive) ─────────────────
+$referenced_images = array_unique($referenced_images);
+
+// ── Copy only referenced images to deploy/images/ ────────────────────────
 $images_source = __DIR__ . '/../assets/images';
+$images_dest   = $deploy_dir . '/images';
 $copied_images = [];
 
-if (is_dir($images_source)) {
-    $images_dest = $deploy_dir . '/images';
-    if (!is_dir($images_dest)) {
-        mkdir($images_dest, 0755, true);
-    }
+foreach ($referenced_images as $cleanPath) {
+    $srcFile = $images_source . '/' . $cleanPath;
+    $dstFile = $images_dest   . '/' . $cleanPath;
 
-    $iterator = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($images_source, RecursiveDirectoryIterator::SKIP_DOTS),
-        RecursiveIteratorIterator::SELF_FIRST
-    );
-
-    foreach ($iterator as $item) {
-        $subPath = $iterator->getSubPathName();
-        $dst     = $images_dest . '/' . $subPath;
-
-        if ($item->isDir()) {
-            if (!is_dir($dst)) {
-                mkdir($dst, 0755, true);
-            }
-        } else {
-            copy($item->getPathname(), $dst);
-            $copied_images[] = $subPath;
+    if (file_exists($srcFile)) {
+        $dstDir = dirname($dstFile);
+        if (!is_dir($dstDir)) {
+            mkdir($dstDir, 0755, true);
         }
+        copy($srcFile, $dstFile);
+        $copied_images[] = $cleanPath;
     }
 }
 // ── Fine copia immagini ───────────────────────────────────────────────────
