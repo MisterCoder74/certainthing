@@ -17,7 +17,7 @@ $user_id = $_SESSION['user_id'];
 $input = json_decode(file_get_contents('php://input'), true);
 
 $session_id = $input['session_id'] ?? '';
-$files = $input['files'] ?? [];
+$files      = $input['files']      ?? [];
 
 if (empty($session_id) || empty($files)) {
     http_response_code(400);
@@ -37,17 +37,17 @@ if (!is_dir($deploy_dir)) {
     mkdir($deploy_dir, 0755, true);
 }
 
-$written_files = [];
+$written_files    = [];
+$referenced_images = [];
 
 foreach ($files as $file) {
-    $name = $file['name'] ?? 'unnamed_file';
+    $name    = $file['name']    ?? 'unnamed_file';
     $content = $file['content'] ?? '';
 
     // Sanitize filename: prevent directory traversal
-    // 1. Remove path separators and '..'
     $name = str_replace(['..', '\\'], ['', ''], $name);
     $name = basename($name);
-    
+
     if (empty($name)) {
         $name = 'unnamed_file_' . uniqid();
     }
@@ -58,8 +58,7 @@ foreach ($files as $file) {
     $real_deploy = realpath($deploy_dir);
     $real_target = realpath($filepath);
     if ($real_target === false) {
-        // File doesn't exist yet, check parent
-        $parent = dirname($filepath);
+        $parent      = dirname($filepath);
         $real_parent = realpath($parent);
         if ($real_parent === false || strpos($real_parent, $real_deploy) !== 0) {
             continue;
@@ -69,53 +68,52 @@ foreach ($files as $file) {
             continue;
         }
     }
-        
-        // ── Remap image paths for deploy ─────────────────
-        $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-        if (in_array($ext, ['html', 'htm', 'php', 'css'])) {
-            $content = str_replace('./assets/images/', './images/', $content);
-            $content = str_replace('assets/images/', 'images/', $content);
+
+    $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+    // --- Extract image references from ORIGINAL content ---
+    // Matches: assets/images/... | ./assets/images/... | /assets/images/... | ../assets/images/...
+    if (in_array($ext, ['html', 'htm', 'php', 'css', 'js', 'json'])) {
+        preg_match_all('#[\'"\(](?:\.{0,2}/)?assets/images/([^\'")\s\?#]+)[\'"\)]#', $content, $matches);
+        foreach ($matches[1] as $imgRelPath) {
+            $referenced_images[] = ltrim($imgRelPath, '/\\');
         }
-        // ── Fine remap ───────────────────────────────────
-        
+    }
+    // --- end image extraction ---
+
+    // --- Remap paths for deploy ---
+    if (in_array($ext, ['html', 'htm', 'php', 'css', 'js', 'json'])) {
+        $content = str_replace('./assets/images/', './images/', $content);
+        $content = str_replace('assets/images/',  'images/',   $content);
+    }
+    // --- end remap ---
 
     if (file_put_contents($filepath, $content) !== false) {
         $written_files[] = $name;
     }
 }
-// ── COPY PROJECT IMAGES TO DEPLOY FOLDER ──────────────────────────────────
-$images_source = __DIR__ . '/../assets/images';  // cartella sorgente immagini
-if (is_dir($images_source)) {
-    $images_dest = $deploy_dir . '/images';
-    if (!is_dir($images_dest)) {
-        mkdir($images_dest, 0755, true);
-    }
-    
-    $image_extensions = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico'];
-    $copied_images = [];
 
-    $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($images_source));
-    foreach ($rii as $fileInfo) {
-        if ($fileInfo->isDir()) continue;
+$referenced_images = array_unique($referenced_images);
 
-        $ext = strtolower($fileInfo->getExtension());
-        if (!in_array($ext, $image_extensions)) continue;
+// Copy referenced images to deploy/images/
+$images_source = __DIR__ . '/../assets/images';
+$images_dest   = $deploy_dir . '/images';
 
-        // Preserve subfolder structure (e.g. heroes/image001.jpg)
-        $relative = substr($fileInfo->getPathname(), strlen($images_source) + 1);
-        $dst = $images_dest . '/' . $relative;
-        $dst_dir = dirname($dst);
-        if (!is_dir($dst_dir)) {
-            mkdir($dst_dir, 0755, true);
+$copied_images = [];
+
+foreach ($referenced_images as $cleanPath) {
+    $srcFile = $images_source . '/' . $cleanPath;
+    $dstFile = $images_dest   . '/' . $cleanPath;
+
+    if (file_exists($srcFile)) {
+        $dstDir = dirname($dstFile);
+        if (!is_dir($dstDir)) {
+            mkdir($dstDir, 0755, true);
         }
-        if (copy($fileInfo->getPathname(), $dst)) {
-            $copied_images[] = $relative;
-        }
+        copy($srcFile, $dstFile);
+        $copied_images[] = $cleanPath;
     }
 }
-// ── FINE COPY PROJECT IMAGES ──────────────────────────────────────────────
-
-
 
 if (empty($written_files)) {
     http_response_code(500);
@@ -123,25 +121,24 @@ if (empty($written_files)) {
     exit;
 }
 
-// Determine a base URL for viewing
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$base_url = $protocol . '://' . $host;
+// Determine base URL for viewing
+$protocol  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host      = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$base_url  = $protocol . '://' . $host;
 
-// Get the base path by removing /api from the script path
 $script_path = $_SERVER['SCRIPT_NAME'] ?? '/api/deploy.php';
-$base_path = dirname(dirname($script_path));
-$base_path = str_replace('/api', '', $base_path);
-$base_path = rtrim($base_path, '/');
+$base_path   = dirname(dirname($script_path));
+$base_path   = str_replace('/api', '', $base_path);
+$base_path   = rtrim($base_path, '/');
 
 $view_url = $base_url . $base_path . '/deploy/' . $user_id . '/' . $session_id;
 
 header('Content-Type: application/json');
 echo json_encode([
-    'success' => true,
-    'files' => $written_files,
-    'count' => count($written_files),
-    'images_copied' => $copied_images ?? [],
-    'deploy_path' => '/deploy/' . $user_id . '/' . $session_id,
-    'view_url' => $view_url
+    'success'       => true,
+    'files'         => $written_files,
+    'count'         => count($written_files),
+    'images_copied' => $copied_images,
+    'deploy_path'   => '/deploy/' . $user_id . '/' . $session_id,
+    'view_url'      => $view_url
 ]);
