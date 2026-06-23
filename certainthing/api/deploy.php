@@ -4,11 +4,16 @@
  * Files are saved to: deploy/{user_id}/{session_id}/
  */
 
+// Buffer all output so PHP notices/warnings don't corrupt the JSON response
+ob_start();
+
 require_once __DIR__ . '/config.php';
 check_auth();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    ob_end_clean();
     http_response_code(405);
+    header('Content-Type: application/json');
     echo json_encode(['error' => 'Method Not Allowed']);
     exit;
 }
@@ -20,13 +25,17 @@ $session_id = $input['session_id'] ?? '';
 $files      = $input['files']      ?? [];
 
 if (empty($session_id) || empty($files)) {
+    ob_end_clean();
     http_response_code(400);
+    header('Content-Type: application/json');
     echo json_encode(['error' => 'session_id and files array are required']);
     exit;
 }
 
 if (!is_array($files)) {
+    ob_end_clean();
     http_response_code(400);
+    header('Content-Type: application/json');
     echo json_encode(['error' => 'files must be an array']);
     exit;
 }
@@ -72,15 +81,17 @@ foreach ($files as $file) {
     $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
 
     // ── Extract referenced images from ORIGINAL content ──────────────────
-    // Matches: assets/images/x  |  ./assets/images/x  |  /assets/images/x
-    // Captures the relative path AFTER assets/images/ (e.g. heroes/hero1.jpg)
+    // Matches any occurrence of assets/images/<path> regardless of prefix.
+    // Uses \\s (double backslash) to produce \s in the regex — avoids
+    // PHP 8.2 deprecation notices for unrecognized escape sequences in
+    // single-quoted strings.
     if (in_array($ext, ['html', 'htm', 'php', 'css', 'js', 'json'])) {
-        preg_match_all('#[\'"\(](?:\.{0,2}/)?assets/images/([^\'")\s\?#]+)[\'"\)]#', $content, $matches);
+        preg_match_all('~assets/images/([^\\s\'")?#]+)~', $content, $matches);
         foreach ($matches[1] as $imgPath) {
             $referenced_images[] = ltrim($imgPath, '/\\');
         }
     }
-    // ── Fine estrazione immagini ──────────────────────────────────────────
+    // ── Fine estrazione ───────────────────────────────────────────────────
 
     // ── Remap image paths for deploy ─────────────────────────────────────
     if (in_array($ext, ['html', 'htm', 'php', 'css', 'js', 'json'])) {
@@ -117,7 +128,9 @@ foreach ($referenced_images as $cleanPath) {
 // ── Fine copia immagini ───────────────────────────────────────────────────
 
 if (empty($written_files)) {
+    ob_end_clean();
     http_response_code(500);
+    header('Content-Type: application/json');
     echo json_encode(['error' => 'No files were written']);
     exit;
 }
@@ -134,6 +147,7 @@ $base_path   = rtrim($base_path, '/');
 
 $view_url = $base_url . $base_path . '/deploy/' . $user_id . '/' . $session_id;
 
+ob_end_clean();
 header('Content-Type: application/json');
 echo json_encode([
     'success'       => true,
