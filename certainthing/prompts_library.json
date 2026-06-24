@@ -6,15 +6,15 @@
       "prompts": [
         {
           "title": "SaaS Landing Page",
-          "text": "Create a modern SaaS landing page with hero section, features grid with icons, pricing table (3 tiers), testimonials carousel, and a strong CTA. Use gradient accents and clean typography."
+          "text": "Build a complete SaaS landing page (vanilla HTML/CSS/JS): hero with headline + subheading, feature grid (6-8 items) with icons, 3-tier pricing table, testimonial carousel, prominent CTAs. Colors: [PRIMARY] + [SECONDARY], minimal design, responsive, no external libraries."
         },
         {
           "title": "Product Launch Page",
-          "text": "Build a product launch landing page with countdown timer, product hero image, key benefits section, early-access signup form, and social proof badges."
+          "text": "Create a product launch landing page (vanilla): fullscreen hero, countdown timer, product showcase, 3-4 key benefit cards, early-access form with JS validation, social proof badges. Tone: urgency & excitement. Responsive, no frameworks."
         },
         {
           "title": "Agency Portfolio Landing",
-          "text": "Create a creative agency landing page with fullscreen hero video/image, services overview, case studies grid, team section, and contact form."
+          "text": "Build an agency landing page (vanilla): impactful hero (text + mock image), 3-4 services overview sections, case studies grid (4-6 mock projects), 3 team profiles, contact form. Clean design, light hover animations, responsive."
         }
       ]
     },
@@ -24,11 +24,11 @@
       "prompts": [
         {
           "title": "Product Showcase Store",
-          "text": "Build an e-commerce product page with image gallery, size/color selectors, add-to-cart button, product description tabs, related products carousel, and customer reviews section."
+          "text": "Develop e-commerce product page (vanilla): image gallery with thumbnails, size/color selectors, add-to-cart with counter, product description tabs, related products carousel, reviews mock section. Cart persistence: localStorage JSON. Mobile-first responsive."
         },
         {
-          "title": "Digital Product Store",
-          "text": "Create a digital product storefront with product cards, category filters, search bar, cart sidebar, and checkout form. Include download-after-purchase flow."
+          "title": "Digital Product Storefront",
+          "text": "Create digital product storefront (vanilla): product card grid, category filter, search bar (client-side), cart sidebar, simple checkout form. Flow: add to cart → checkout → success page. Data: local JSON, localStorage for session."
         }
       ]
     },
@@ -38,11 +38,11 @@
       "prompts": [
         {
           "title": "Developer Portfolio",
-          "text": "Build a developer portfolio with animated hero intro, skills progress bars, project cards with live demo links, GitHub activity section, and contact form."
+          "text": "Build developer portfolio (vanilla): animated hero intro, skills section with progress bars, projects grid with tags + demo links, GitHub stats mock, brief about, contact form. Dark/light theme toggle via JS. Responsive."
         },
         {
           "title": "Photographer Portfolio",
-          "text": "Create a minimal photographer portfolio with masonry image grid, lightbox viewer, category filters, about section, and booking form."
+          "text": "Create photographer portfolio (vanilla): minimal hero, masonry image grid (mock), simple vanilla JS lightbox, category filter buttons, about section, booking form. Palette: sophisticated colors [SUGGEST], elegant typography."
         }
       ]
     },
@@ -52,11 +52,11 @@
       "prompts": [
         {
           "title": "Tech Blog",
-          "text": "Build a tech blog with featured post hero, post cards grid with tags and read time, sidebar with categories and popular posts, dark/light theme toggle, and newsletter signup."
+          "text": "Develop tech blog (vanilla): featured post hero, blog post card grid (title, excerpt, meta: author/date/read-time, tags), sidebar (categories, popular posts), dark/light toggle JS, newsletter signup form. Data: JSON blog posts file."
         },
         {
           "title": "Personal Blog",
-          "text": "Create a minimal personal blog with clean typography, post list with excerpts, tag cloud, about page, and RSS feed link. Focus on readability."
+          "text": "Create minimal personal blog (vanilla): typography-first design, post list with dates/excerpts, tag cloud, about section, single post page with prev/next navigation. Mobile-optimized, no clutter. Data: JSON for posts."
         }
       ]
     },
@@ -66,11 +66,11 @@
       "prompts": [
         {
           "title": "Analytics Dashboard",
-          "text": "Build an analytics dashboard with KPI cards (revenue, users, conversion rate), line chart for trends, bar chart for comparisons, data table with sorting, and date range picker."
+          "text": "Build analytics dashboard (vanilla): 4-6 KPI cards (numbers + trend arrows), line chart (time trends), bar chart (comparisons), data table with JS sort/filter, date range picker. Mock data: JSON. Responsive, professional color design."
         },
         {
           "title": "Project Management Board",
-          "text": "Create a Kanban-style project board with draggable task cards, columns (To Do, In Progress, Done), task detail modal, priority labels, and team member avatars."
+          "text": "Create Kanban board (vanilla): 3-4 draggable columns (To Do, In Progress, Review, Done), draggable task cards via vanilla JS, detail popup modal, priority badges, assignee avatars, add button for new tasks. Persistence: localStorage JSON."
         }
       ]
     },
@@ -80,11 +80,11 @@
       "prompts": [
         {
           "title": "Multi-step Form",
-          "text": "Build a multi-step registration form with progress bar, field validation, step navigation (back/next), summary review step, and success confirmation page."
+          "text": "Develop multi-step form (vanilla): 3-4 steps, progress bar, real-time JS field validation, prev/next navigation, final summary step, success page. Smooth transition effects. Mobile-friendly. Save progress in sessionStorage."
         },
         {
-          "title": "Calculator Tool",
-          "text": "Create an interactive calculator tool (e.g. loan/mortgage calculator) with input sliders, real-time result updates, comparison chart, and PDF export button."
+          "title": "Interactive Calculator",
+          "text": "Create interactive calculator (e.g. mortgage/loan, vanilla): input range sliders, real-time result updates, formula visualization, comparison chart (different rates), PDF export button via JS. Clear design, intuitive UX."
         }
       ]
     },
@@ -94,11 +94,11 @@
       "prompts": [
         {
           "title": "Newsletter Template",
-          "text": "Build a responsive HTML email newsletter template with header logo, hero image, article sections with thumbnails, CTA buttons, social links footer. Must be table-based for email client compatibility."
+          "text": "Build HTML email newsletter template (table-based): logo header, hero image, 3-4 content sections (text + thumbnail), multicolor CTA buttons, social links footer, unsubscribe link. Responsive for email clients (Outlook, Gmail, etc)."
         },
         {
           "title": "Transactional Email",
-          "text": "Create a transactional email template (order confirmation) with order summary table, shipping details, tracking button, and help/support footer. Table-based layout."
+          "text": "Create transactional email template (order confirmation, table-based HTML): header order details, order summary table, shipping info, tracking button, help/support footer. Email client compatible, brand colors, responsive."
         }
       ]
     },
@@ -108,11 +108,11 @@
       "prompts": [
         {
           "title": "API Documentation",
-          "text": "Build an API documentation page with sidebar navigation, endpoint sections (GET/POST/PUT/DELETE), request/response code examples with syntax highlighting, authentication guide, and search."
+          "text": "Develop API docs (vanilla): sticky sidebar navigation, endpoint sections (GET/POST/PUT/DELETE), code examples with syntax highlight (highlight.js ok), auth guide, client-side search box. Dark/light theme. Responsive."
         },
         {
           "title": "Product Docs Site",
-          "text": "Create a product documentation site with sidebar tree navigation, markdown-style content area, breadcrumbs, previous/next page links, and table of contents per page."
+          "text": "Build product documentation site (vanilla): sidebar tree nav with collapse, markdown-rendered content (or structured HTML), breadcrumbs, per-page TOC, prev/next nav buttons, search. Classic docs layout, responsive."
         }
       ]
     },
@@ -122,11 +122,11 @@
       "prompts": [
         {
           "title": "Browser Mini-game",
-          "text": "Build a simple browser game (e.g. Snake, Tetris, or Memory) using HTML5 Canvas or DOM elements. Include score counter, high score storage (localStorage), start/pause/restart controls, and responsive layout."
+          "text": "Create browser mini-game (vanilla): [CHOOSE: Snake/Memory/Tetris/2048], Canvas or DOM, score counter, high score in localStorage, start/pause/restart buttons, game over modal. Responsive, mobile-playable."
         },
         {
           "title": "Quiz Game",
-          "text": "Create an interactive quiz game with question cards, multiple choice answers, timer per question, score tracking, progress bar, and final results screen with share button."
+          "text": "Build quiz game (vanilla): question cards, multiple choice answers, optional timer per question, score tracking, progress bar, final results screen with share button, replay option. Data: JSON questions. Smooth transitions."
         }
       ]
     },
@@ -136,11 +136,11 @@
       "prompts": [
         {
           "title": "Restaurant Website",
-          "text": "Build a restaurant website with fullscreen hero image, digital menu with categories and prices, reservation form with date/time picker, photo gallery, Google Maps embed, and contact info."
+          "text": "Develop restaurant website (vanilla): fullscreen hero image, digital menu with categories + items + prices, reservation form (JS date/time picker), photo gallery with lightbox, embedded Google Maps, contact info + WhatsApp button."
         },
         {
           "title": "Local Business Site",
-          "text": "Create a local business website with services list, business hours, team profiles, customer testimonials, location map, and contact form with WhatsApp button."
+          "text": "Create local business website (vanilla): 4-6 services overview cards, business hours, team profiles, customer testimonials carousel, location map embed, contact form + WhatsApp. Warm & approachable design, responsive."
         }
       ]
     }

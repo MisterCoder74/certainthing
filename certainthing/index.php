@@ -19,7 +19,7 @@ if (
     ($_SESSION['user_mode']   ?? '') === 'paid' &&
     ($_SESSION['user_status'] ?? '') === 'enabled' &&
     !empty($_SESSION['last_payment_at'])
-) {
+){
     $lastPayment  = new DateTime($_SESSION['last_payment_at']);
     $today        = new DateTime('today');
     $expiryDate   = (clone $lastPayment)->modify('+1 month'); // calendar month, handles Feb/short months correctly
@@ -68,6 +68,7 @@ $userInfo = [
     'registered'   => $_SESSION['user_created'] ?? '—',
     'mode'         => $userMode === 'trial' ? 'Trial' : ($userMode === 'paid' ? 'Paid' : '—'),
     'days_left'    => '—',
+    'last_payment' => $_SESSION['last_payment_at'],    
 ];
 
 if ($userMode === 'trial' && !empty($_SESSION['user_created'])) {
@@ -76,7 +77,7 @@ if ($userMode === 'trial' && !empty($_SESSION['user_created'])) {
     $diffDays = (int) $today->diff($created)->days;
     $userInfo['days_left'] = max(0, 7 - $diffDays) . ' days (trial)';
 } elseif ($userMode === 'paid' && !empty($_SESSION['last_payment_at'])) {
-    $userInfo['days_left'] = $paidDaysLeft . ' days (subscription)';
+$userInfo['days_left'] = $paidDaysLeft . ' days (subscription)';
 }
 // ── FINE USER INFO POPUP DATA ─────────────────────────────────────────────
 
@@ -156,28 +157,7 @@ margin-right:2px;
 }   
             
             
-/* ----- shared api key ---- */
-.key-status-box {
-    font-size: 0.82rem;
-    color: #888;
-    margin: 6px 0 2px;
-}
-.key-status-box code {
-    font-family: monospace;
-    background: rgba(255,255,255,0.06);
-    padding: 1px 5px;
-    border-radius: 3px;
-}
-.key-warning-box {
-    margin-top: 10px;
-    padding: 10px 14px;
-    border-radius: 8px;
-    background: rgba(255, 180, 0, 0.12);
-    border: 1px solid rgba(255, 180, 0, 0.35);
-    color: #f5c842;
-    font-size: 0.85rem;
-    line-height: 1.5;
-}
+
             
 @media screen and (max-width: 432px) {
 
@@ -241,6 +221,7 @@ display: none;
                         <div class="user-info-row"><span class="user-info-label">Registered</span><span><?= htmlspecialchars(date('d M Y', strtotime($userInfo['registered']))) ?></span></div>
                         <div class="user-info-row"><span class="user-info-label">Mode</span><span><?= $userInfo['mode'] ?></span></div>
                         <div class="user-info-row"><span class="user-info-label">Expires in</span><span><?= $userInfo['days_left'] ?></span></div>
+                        <div class="user-info-row"><span class="user-info-label">Last Payment</span><span><?= $userInfo['last_payment'] ?></span></div>    
                     </div>
                 </div>
 
@@ -415,11 +396,10 @@ display: none;
                     <input type="password" id="openai-api-key-input" placeholder="sk-..." autocomplete="new-password">
                 </div>
                 <div class="api-key-status" id="api-key-status"></div>
-                <div id="key-status-info" style="display:none;" class="key-status-box"></div>
-                 <div id="key-shared-warning" style="display:none;" class="key-warning-box">
-                 ⚠️ Uou are using a <strong>Shared Key</strong>.
-                 This API Key is only for evaluation.
-                 You will need to enter your API Key after evaluation expires.
+                <div id="key-status-info" class="key-status-box"></div>
+                 <div id="key-shared-warning" class="key-warning-box">
+                 ⚠️ NOTE: If you are using the fallback <strong>Shared Key</strong>,
+                 you will need to enter your Personal API Key after evaluation expires.
                  </div>    
                     
                 <div class="modal-footer">
