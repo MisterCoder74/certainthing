@@ -18,10 +18,29 @@ function mask_api_key_value($key) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+// ✅ FIX
+if (function_exists('get_openai_api_key_with_source')) {
     $keyInfo = get_openai_api_key_with_source();
     $key     = $keyInfo['key'];
     $source  = $keyInfo['source'];
-    $preview = $key !== '' ? substr($key, 0, 15) . '...' : '';
+} else {
+    $key          = get_openai_api_key();
+    $userId       = $_SESSION['user_id'] ?? '';
+    $userKeyFile  = __DIR__ . '/../data/keys/' . $userId . '.key';  // ← __DIR__ + risali di un livello
+    $sharedFile   = __DIR__ . '/../data/shared_key.txt';             // ← idem
+    if ($userId && file_exists($userKeyFile) && strlen(trim(file_get_contents($userKeyFile))) > 20) {
+        $source = 'user';
+    } elseif (file_exists($sharedFile) && strlen(trim(file_get_contents($sharedFile))) > 20) {
+        $source = 'shared';
+    } elseif (getenv('OPENAI_API_KEY') !== false && getenv('OPENAI_API_KEY') !== '') {
+        $source = 'env';
+    } else {
+        $source = 'none';
+    }
+}
+
+$preview = $key !== '' ? substr($key, 0, 15) . '...' : '';
+
 
     // Get user's current plan mode from users.json
     $users  = safe_read_json(USERS_FILE);

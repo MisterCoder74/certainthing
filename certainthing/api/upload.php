@@ -32,7 +32,20 @@ if (preg_match('/^image\/(jpeg|png|webp)$/', $fileType)) {
     $base64 = base64_encode($data);
     $response['content'] = 'data:' . $fileType . ';base64,' . $base64;
     $response['is_image'] = true;
-} 
+}
+// Handle PDFs
+elseif ($fileType === 'application/pdf' || strtolower(pathinfo($fileName, PATHINFO_EXTENSION)) === 'pdf') {
+    if ($fileSize > 20 * 1024 * 1024) {
+        header('HTTP/1.1 400 Bad Request');
+        echo json_encode(['error' => 'PDF too large. Maximum size is 20MB.']);
+        exit;
+    }
+    $data = file_get_contents($fileTmpPath);
+    $base64 = base64_encode($data);
+    $response['content'] = 'data:application/pdf;base64,' . $base64;
+    $response['is_image'] = false;
+    $response['is_pdf'] = true;
+}
 // Handle Text Files
 else {
     // Basic text file check - can be more sophisticated but let's stick to common ones
