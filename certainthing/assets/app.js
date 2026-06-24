@@ -43,7 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let isDeploying = false;
     let isGenerating = false;
     let currentStreamController = null;
-    let pastedImageCounter = 0;    
+    let pastedImageCounter = 0;
+    let debugMode = false;
 
     // Initial Load
     loadSession(currentSessionId);
@@ -290,6 +291,17 @@ function handlePaste(e) {
             currentStreamController.abort();
         }
 
+        // Reset debug mode
+        debugMode = false;
+        const debugBtn = document.getElementById('debug-btn');
+        const langWrap = document.getElementById('debug-lang-wrap');
+        const langSel  = document.getElementById('debug-lang');
+        if (debugBtn) debugBtn.classList.remove('active');
+        if (langWrap) langWrap.classList.remove('visible');
+        if (langSel)  langSel.value = '';
+        const chatInput = document.getElementById('chat-input');
+        if (chatInput) chatInput.placeholder = 'Describe what you want to build...';
+
         currentSessionId = 'sess_' + Date.now();
         localStorage.setItem('certainthing_session_id', currentSessionId);
         messagesContainer.querySelectorAll('.message').forEach(msg => msg.remove());
@@ -525,12 +537,13 @@ function handlePaste(e) {
                 }
 
                 if (!name) {
+
                     // Fallback: scan code content for a filename comment
                     name = extractFilenameFromCode(code.textContent);
                 }
-
                 if (!name) {
                     // Last resort: generate a name based on language
+                   
                     if (!lang) {
                         // Try to detect language from class
                         const classMatch = code.className.match(/language-(\w+)/);
@@ -714,8 +727,8 @@ function handlePaste(e) {
         };
         return map[ext] || '';
     }
-
-    // Fallback: scan first 5 lines of code content for a filename comment
+        
+	// Fallback: scan first 5 lines of code content for a filename comment
     // e.g. "// auth.php", "/* styles.css */", "<!-- index.html -->", "# config.yaml"
     function extractFilenameFromCode(code) {
         if (!code) return '';
@@ -727,7 +740,7 @@ function handlePaste(e) {
             if (m && m[1] && !m[1].startsWith('http')) return m[1];
         }
         return '';
-    }
+    }        
 
     function parseFenceInfo(infoRaw) {
         const info = (infoRaw || '').trim();
@@ -1522,6 +1535,13 @@ async function openApiKeyModal() {
         if (urls.length > 0) {
             formData.append('urls', JSON.stringify(urls));
         }
+        if (debugMode) {
+            formData.append('debug_mode', '1');
+            const langSel = document.getElementById('debug-lang');
+            if (langSel && langSel.value) {
+                formData.append('debug_language', langSel.value);
+            }
+        }
 
         currentStreamController = new AbortController();
 
@@ -1706,6 +1726,56 @@ async function openApiKeyModal() {
             toast.remove();
         }, 3500);
     }
+
+    // ─── Debug Mode ──────────────────────────────────────────
+    (function initDebugMode() {
+        const inputActions = document.querySelector('.input-actions');
+        if (!inputActions) return;
+
+        const langWrap = document.createElement('div');
+        langWrap.id = 'debug-lang-wrap';
+        langWrap.innerHTML = `
+            <select id="debug-lang" title="Code language">
+                <option value="">Auto-detect</option>
+                <option value="javascript">JavaScript</option>
+                <option value="php">PHP</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+                <option value="sql">SQL</option>
+                <option value="typescript">TypeScript</option>
+            </select>`;
+
+        const stopBtn = document.getElementById('stop-btn');
+        const debugBtn = document.createElement('button');
+        debugBtn.type = 'button';
+        debugBtn.id = 'debug-btn';
+        debugBtn.title = 'Debug mode: analyze existing code for bugs';
+        debugBtn.textContent = '🐛';
+
+        inputActions.insertBefore(debugBtn, stopBtn);
+
+        const inputArea = document.querySelector('.input-area');
+        if (inputArea) inputArea.insertBefore(langWrap, inputArea.querySelector('form'));
+
+        debugBtn.addEventListener('click', () => {
+            debugMode = !debugMode;
+            debugBtn.classList.toggle('active', debugMode);
+            langWrap.classList.toggle('visible', debugMode);
+
+            const chatInput = document.getElementById('chat-input');
+            if (chatInput) {
+                chatInput.placeholder = debugMode
+                    ? 'Paste your code here to debug...'
+                    : 'Describe what you want to build...';
+            }
+            if (!debugMode) {
+                const langSel = document.getElementById('debug-lang');
+                if (langSel) langSel.value = '';
+            }
+        });
+    })();
 });
 
 (function() {
