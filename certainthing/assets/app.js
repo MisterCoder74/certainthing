@@ -525,7 +525,12 @@ function handlePaste(e) {
                 }
 
                 if (!name) {
-                    // Fallback: generate a name based on language
+                    // Fallback: scan code content for a filename comment
+                    name = extractFilenameFromCode(code.textContent);
+                }
+
+                if (!name) {
+                    // Last resort: generate a name based on language
                     if (!lang) {
                         // Try to detect language from class
                         const classMatch = code.className.match(/language-(\w+)/);
@@ -710,6 +715,20 @@ function handlePaste(e) {
         return map[ext] || '';
     }
 
+    // Fallback: scan first 5 lines of code content for a filename comment
+    // e.g. "// auth.php", "/* styles.css */", "<!-- index.html -->", "# config.yaml"
+    function extractFilenameFromCode(code) {
+        if (!code) return '';
+        const lines = (code + '').split('\n').slice(0, 5);
+        for (const line of lines) {
+            const t = line.trim();
+            // Supports: // file.ext, // file.ext - description, /* file.ext */, <!-- file.ext -->, # file.ext
+            const m = t.match(/^(?:\/\/|\/\*|<!--|#)\s*([\w][\w.\-]*\.[a-zA-Z0-9]{1,8})\b/);
+            if (m && m[1] && !m[1].startsWith('http')) return m[1];
+        }
+        return '';
+    }
+
     function parseFenceInfo(infoRaw) {
         const info = (infoRaw || '').trim();
         let lang = 'text';
@@ -847,6 +866,10 @@ function handlePaste(e) {
             }
 
             const info = parseFenceInfo(match[1]);
+            // Fallback: if no filename in fence info, scan the code content itself
+            if (!info.filename) {
+                info.filename = extractFilenameFromCode(match[2]);
+            }
             html += renderCodeBlock(info.lang, info.filename, match[2]);
             lastIndex = fenceRegex.lastIndex;
         }

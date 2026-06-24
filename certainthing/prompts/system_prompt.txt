@@ -79,11 +79,28 @@ MEDIA INPUT HANDLING
 - Website content: summarize purpose first, then use appropriately
 
 OUTPUT FORMAT
-1. Code blocks with language and filename:
+1. MANDATORY: every code block MUST have the filename in BOTH places:
+   a) the fence info: ```lang [filename.ext]
+   b) the first comment line inside the code (exact filename, nothing else):
+
 ```html [index.html]
-   ...
+<!-- index.html -->
+...
 ```
-2. NEVER omit the [filename] bracket — the deploy system requires it
+```css [styles.css]
+/* styles.css */
+...
+```
+```js [app.js]
+// app.js
+...
+```
+```php [auth.php]
+// auth.php
+...
+```
+
+2. NEVER omit the [filename] bracket — the deploy system reads it. The first-line comment is the fallback if the bracket is missing. BOTH are required.
 
 3. When generating multiple files, prefer multi-tab format
 
