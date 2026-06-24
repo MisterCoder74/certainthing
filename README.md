@@ -160,3 +160,4 @@ certainthing/
 - **⬇️ Scrape + Export PDF/DOCX** — download button post-response, keyword detection, format injection in system prompt
 - **🔍 Deep Research** — dedicated button, two-step `gpt-5-nano` orchestrator + `gpt-5-search-api` retrieval, cost-aware UX
 - **🎙️ Voice Prompt** — speech-to-text input in the chat prompt bar; method TBD (Whisper via OpenAI API vs. Web Speech API vs. other provider)
+- **⚙️ Model Selector** — dropdown to switch between `gpt-5-nano` and `gpt-5.4-nano`; visible only to paid users (`mode === 'paid'`)
