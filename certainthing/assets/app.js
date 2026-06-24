@@ -306,6 +306,7 @@ function handlePaste(e) {
         localStorage.setItem('certainthing_session_id', currentSessionId);
         messagesContainer.querySelectorAll('.message').forEach(msg => msg.remove());
         reasoningContainer.innerHTML = '';
+		previewIframe.srcdoc = '<html><body><p style="color: #eee; background: rgba(0,0,0,.75);  font-family: sans-serif; padding: 20px;">No HTML found to preview. Try asking the AI to build an HTML page.</p></body></html>';            
         statusBadge.textContent = 'Idle';
         statusBadge.className = 'status-badge idle';
 
@@ -1523,7 +1524,7 @@ async function openApiKeyModal() {
     // =============================================
     async function sendMessage(message, attachments = [], urls = []) {
         applyStatus('Thinking');
-        reasoningContainer.innerHTML = '';
+        //reasoningContainer.innerHTML = '';
         showGenerationUi();
 
         const formData = new FormData();
