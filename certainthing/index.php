@@ -358,6 +358,7 @@ display: none;
                                 <div class="input-actions">
                                     <button type="button" id="attach-btn" title="Attach file">📎</button>
                                     <button type="button" id="promptLibraryBtn" title="Prompt Library">⚡</button>
+                                    <button type="button" id="voice-btn" title="Voice input">🎙️</button>
                                     <button type="button" id="stop-btn" class="stop-btn" title="Stop generation">Stop</button>
                                     <button type="submit" id="send-btn">Send</button>
                                 </div>
