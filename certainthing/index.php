@@ -359,6 +359,15 @@ display: none;
                                     <button type="button" id="attach-btn" title="Attach file">📎</button>
                                     <button type="button" id="promptLibraryBtn" title="Prompt Library">⚡</button>
                                     <button type="button" id="voice-btn" title="Voice input">🎙️</button>
+                    <select id="voice-language" title="Speech recognition language">
+                        <option value="">Auto</option>
+                        <option value="it-IT">IT</option>
+                        <option value="en-US">EN</option>
+                        <option value="es-ES">ES</option>
+                        <option value="fr-FR">FR</option>
+                        <option value="de-DE">DE</option>
+                        <option value="pt-PT">PT</option>
+                    </select>
                                     <button type="button" id="stop-btn" class="stop-btn" title="Stop generation">Stop</button>
                                     <button type="submit" id="send-btn">Send</button>
                                 </div>
