@@ -61,7 +61,8 @@
                 "Deploy manager con file browser ed editor codice",
                 "Persistenza sessioni basata su JSON",
                 "Integrazione BYOK OpenAI (gpt-5-nano)",
-                "Output vanilla stack: HTML, CSS, JS, PHP — nessun framework"
+                "Output vanilla stack: HTML, CSS, JS, PHP — nessun framework",
+                "Model selector (gpt-5-nano / gpt-5.4-nano, piano Paid)"
             ]
         },
         {
@@ -489,6 +490,9 @@ footer { padding: 3rem 2rem; text-align: center; background: var(--surface); bor
     <p>Incolla il tuo codice o allega un file: CertainThing identifica ogni bug con spiegazioni chiare, correzioni pronte, e un tono divertente e di supporto che non ti fa sentire stupido.</p>
         
         
+    <h3>⚙️ Model Selector (Piano Paid)</h3>
+    <p>Gli utenti con piano a pagamento possono scegliere il modello AI direttamente dalla barra degli strumenti della chat: <code>gpt-5-nano</code> (predefinito, veloce ed economico) oppure <code>gpt-5.4-nano</code> (risposta più raffinata per task complessi). La selezione è trasparente — il modello scelto viene mostrato nel pannello Reasoning a ogni risposta.</p>
+
     <h3>📂 Deploy Manager</h3>
     <p>Pannello centralizzato per gestire tutti i tuoi deploy: naviga file e cartelle, modifica codice con l'editor integrato, elimina, scarica, copia link pubblici. Tutto da un'unica interfaccia autenticata.</p>
 
@@ -577,7 +581,7 @@ footer { padding: 3rem 2rem; text-align: center; background: var(--surface); bor
         <li><strong>Backend:</strong> PHP — nessun framework, nessuna dipendenza esterna</li>
         <li><strong>Frontend:</strong> HTML5, CSS3, JavaScript vanilla</li>
         <li><strong>Persistenza:</strong> File JSON — nessun database richiesto</li>
-        <li><strong>AI Engine:</strong> OpenAI API (<code>gpt-5-nano</code>) via BYOK</li>
+        <li><strong>AI Engine:</strong> OpenAI API (<code>gpt-5-nano</code> · <code>gpt-5.4-nano</code> per piano Paid) via BYOK</li>
         <li><strong>Autenticazione:</strong> Custom login con bcrypt hash</li>
         <li><strong>Pagamento:</strong> Stripe (€4.99/mese, 7 giorni trial)</li>
     </ul>
