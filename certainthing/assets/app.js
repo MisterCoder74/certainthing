@@ -1824,7 +1824,9 @@ async function openApiKeyModal() {
 
         function buildRecognition() {
             const r = new SpeechRecognition();
-            // lang intentionally NOT set — browser inherits OS/system language
+            // lang: read from #voice-language; empty string = browser/OS default
+            const langSel = document.getElementById('voice-language');
+            r.lang = langSel ? langSel.value : '';
             r.continuous     = true;
             r.interimResults = true;
 
@@ -1889,6 +1891,9 @@ async function openApiKeyModal() {
                 isRecording = true;
                 voiceBtn.classList.add('recording');
                 voiceBtn.title = 'Recording\u2026 (stop: click or pause 2.5\u202fs)';
+                // Sync lang to current select value before each start
+                const _langSel = document.getElementById('voice-language');
+                if (_langSel) recognition.lang = _langSel.value;
                 try {
                     recognition.start();
                 } catch(e) {
