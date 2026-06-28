@@ -189,7 +189,7 @@ display: none;
             
     </style>
 </head>
-<body>
+<body data-mode="<?= htmlspecialchars($userMode) ?>">
     <div id="app">
         <!-- Top Navigation -->
         <header class="main-header">
