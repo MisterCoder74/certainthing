@@ -1544,6 +1544,11 @@ async function openApiKeyModal() {
             }
         }
 
+        const modelSel = document.getElementById('model-selector');
+        if (modelSel) {
+            formData.append('model', modelSel.value);
+        }
+
         currentStreamController = new AbortController();
 
         let assistantMessageDiv = null;
@@ -1776,6 +1781,23 @@ async function openApiKeyModal() {
                 if (langSel) langSel.value = '';
             }
         });
+    })();
+
+    // ─── Model Selector (paid only) ──────────────────────────
+    (function initModelSelector() {
+        if (document.body.dataset.mode !== 'paid') return;
+        const inputActions = document.querySelector('.input-actions');
+        if (!inputActions) return;
+
+        const sel = document.createElement('select');
+        sel.id = 'model-selector';
+        sel.title = 'Select AI model';
+        sel.innerHTML = `
+            <option value="gpt-5-nano">gpt-5-nano</option>
+            <option value="gpt-5.4-nano">gpt-5.4-nano</option>`;
+
+        const stopBtn = document.getElementById('stop-btn');
+        inputActions.insertBefore(sel, stopBtn);
     })();
 });
 
