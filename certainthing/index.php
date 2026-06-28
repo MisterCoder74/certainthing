@@ -368,8 +368,8 @@ display: none;
                         <option value="de-DE">DE</option>
                         <option value="pt-PT">PT</option>
                     </select>
-                                    <button type="button" id="stop-btn" class="stop-btn" title="Stop generation">Stop</button>
-                                    <button type="submit" id="send-btn">Send</button>
+                                    <button type="button" id="stop-btn" class="stop-btn" title="Stop generation">⏹</button>
+                                    <button type="submit" id="send-btn" title="Send">➤</button>
                                 </div>
                             </div>
                         </form>
