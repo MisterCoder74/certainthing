@@ -1490,3 +1490,29 @@ footer {
 #model-selector:focus {
     border-color: var(--accent-color);
 }
+
+/* ── Voice Prompt Button ─────────────────────────────────────────────── */
+#voice-btn {
+    background: transparent;
+    border: none;
+    color: var(--reasoning-text);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: color 0.2s, transform 0.2s;
+}
+
+#voice-btn:hover:not(:disabled) {
+    color: var(--accent-color);
+}
+
+#voice-btn.recording {
+    color: #e05252;
+    animation: voice-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes voice-pulse {
+    0%, 100% { transform: scale(1);   opacity: 1;    }
+    50%       { transform: scale(1.2); opacity: 0.65; }
+}
