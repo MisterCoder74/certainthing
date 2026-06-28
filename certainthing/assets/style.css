@@ -1473,3 +1473,20 @@ footer {
 #debug-lang:focus {
     border-color: var(--accent-color);
 }
+
+/* ── Model Selector (paid only) ─────────────────────────────────────── */
+#model-selector {
+    background: var(--input-bg, var(--pane-bg));
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-color);
+    font-size: 0.82rem;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    outline: none;
+    align-self: center;
+}
+
+#model-selector:focus {
+    border-color: var(--accent-color);
+}
