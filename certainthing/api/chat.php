@@ -106,6 +106,12 @@ $urls = isset($_POST['urls']) ? json_decode($_POST['urls'], true) : [];
 $debug_mode = !empty($_POST['debug_mode']) && $_POST['debug_mode'] === '1';
 $debug_language = trim($_POST['debug_language'] ?? '');
 $model = 'gpt-5-nano';
+// Model selector: accept model override only from paid users
+$_ctMode = $_SESSION['user_mode'] ?? 'trial';
+$_ctAllowed = ['gpt-5-nano', 'gpt-5.4-nano'];
+if ($_ctMode === 'paid' && !empty($_POST['model']) && in_array($_POST['model'], $_ctAllowed, true)) {
+    $model = $_POST['model'];
+}
 
 if (!is_array($attachments)) {
     $attachments = [];
