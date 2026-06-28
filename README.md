@@ -11,7 +11,8 @@ Browser-based AI coding assistant with multimodal input, live reasoning transpar
 ## Features
 
 ### 🤖 AI Engine
-- **Model**: `gpt-5-nano` with reasoning streaming via `reasoning_content` (SSE)
+- **Model**: `gpt-5-nano` by default · paid users can switch to `gpt-5.4-nano` via the in-UI selector
+- **Reasoning**: streaming via `reasoning_content` (SSE)
 - **Dynamic token budgets** by tier: Shared → 28k · BYOK → 64k · Paid → 110k
 - **Token budget pill**: displayed in the reasoning panel on every request
 - **Streaming**: hardcoded `true`; `reasoning_effort` defaults to `medium`
@@ -48,6 +49,12 @@ Key cascade (in priority order):
 - Reasoning panel emits debug metrics
 - Response format: **Issues / Support / Solutions / What's Working**
 
+### ⚙️ Model Selector (Paid)
+- **Dropdown** in the input toolbar — visible only when `body[data-mode="paid"]`
+- Options: `gpt-5-nano` (default) · `gpt-5.4-nano`
+- Selected model is passed via `model` POST param; `chat.php` validates against session `user_mode` before applying
+- Trial and BYOK users are always served `gpt-5-nano`
+
 ### 📤 Output & Export
 - **Syntax-highlighted code blocks**: highlight.js, tabbed multi-file output
 - **Copy** and **Download** buttons per file
@@ -80,7 +87,7 @@ Key cascade (in priority order):
 |-------|-----------|
 | Frontend | Vanilla HTML / CSS / JavaScript |
 | Backend | PHP 8.x (no Composer, no frameworks) |
-| AI | OpenAI `gpt-5-nano` via Chat Completions (SSE) |
+| AI | OpenAI `gpt-5-nano` / `gpt-5.4-nano` (paid) via Chat Completions (SSE) |
 | Auth | Custom flat-file JSON (`data/users.json`) |
 | Payments | Stripe Checkout (hosted), `invoice.paid` webhook |
 | Deployment | Shared hosting (vivacitydesign.net) |
@@ -160,4 +167,3 @@ certainthing/
 - **⬇️ Scrape + Export PDF/DOCX** — download button post-response, keyword detection, format injection in system prompt
 - **🔍 Deep Research** — dedicated button, two-step `gpt-5-nano` orchestrator + `gpt-5-search-api` retrieval, cost-aware UX
 - **🎙️ Voice Prompt** — speech-to-text input in the chat prompt bar; method TBD (Whisper via OpenAI API vs. Web Speech API vs. other provider)
-- **⚙️ Model Selector** — dropdown to switch between `gpt-5-nano` and `gpt-5.4-nano`; visible only to paid users (`mode === 'paid'`)
