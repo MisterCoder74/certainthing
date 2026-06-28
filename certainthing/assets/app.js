@@ -1799,6 +1799,103 @@ async function openApiKeyModal() {
         const stopBtn = document.getElementById('stop-btn');
         inputActions.insertBefore(sel, stopBtn);
     })();
+
+    // ─── Voice Prompt ────────────────────────────────────────────
+    (function initVoicePrompt() {
+        const voiceBtn   = document.getElementById('voice-btn');
+        const chatInput  = document.getElementById('chat-input');
+        if (!voiceBtn || !chatInput) return;
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            voiceBtn.disabled = true;
+            voiceBtn.title    = 'Voice input is not supported in this browser';
+            voiceBtn.style.opacity = '0.4';
+            voiceBtn.style.cursor  = 'not-allowed';
+            return;
+        }
+
+        const SILENCE_MS = 2500;
+        let recognition   = null;
+        let recording     = false;
+        let silenceTimer  = null;
+        let baseText      = '';   // textarea content when recording started
+        let finalsSoFar   = '';   // accumulated confirmed finals
+
+        function startRecording() {
+            recognition = new SpeechRecognition();
+            // lang intentionally NOT set — browser uses OS/system language
+            recognition.continuous      = true;
+            recognition.interimResults  = true;
+
+            recognition.onstart = function () {
+                recording = true;
+                voiceBtn.classList.add('recording');
+                voiceBtn.title = 'Recording… (stop: click or pause 2.5 s)';
+                baseText   = chatInput.value;
+                finalsSoFar = '';
+            };
+
+            recognition.onspeechstart = function () {
+                clearTimeout(silenceTimer);
+            };
+
+            recognition.onspeechend = function () {
+                silenceTimer = setTimeout(function () {
+                    if (recognition) recognition.stop();
+                }, SILENCE_MS);
+            };
+
+            recognition.onresult = function (e) {
+                clearTimeout(silenceTimer);
+                let interim = '';
+                for (let i = e.resultIndex; i < e.results.length; i++) {
+                    const t = e.results[i][0].transcript;
+                    if (e.results[i].isFinal) {
+                        finalsSoFar += (finalsSoFar ? ' ' : '') + t.trim();
+                    } else {
+                        interim = t;
+                    }
+                }
+                const combined = finalsSoFar + (interim ? (finalsSoFar ? ' ' : '') + interim : '');
+                const sep = (baseText && combined) ? ' ' : '';
+                chatInput.value = baseText + sep + combined;
+                chatInput.style.height = 'auto';
+                chatInput.style.height = chatInput.scrollHeight + 'px';
+            };
+
+            recognition.onerror = function (e) {
+                if (e.error === 'no-speech') return; // silent — just restart silence timer
+                stopRecording();
+            };
+
+            recognition.onend = function () {
+                stopRecording();
+            };
+
+            recognition.start();
+        }
+
+        function stopRecording() {
+            clearTimeout(silenceTimer);
+            recording = false;
+            voiceBtn.classList.remove('recording');
+            voiceBtn.title = 'Voice input';
+            if (recognition) {
+                try { recognition.abort(); } catch (_) {}
+                recognition = null;
+            }
+        }
+
+        voiceBtn.addEventListener('click', function () {
+            if (recording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+    })();
 });
 
 (function() {
