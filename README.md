@@ -49,6 +49,15 @@ Key cascade (in priority order):
 - Reasoning panel emits debug metrics
 - Response format: **Issues / Support / Solutions / What's Working**
 
+### 🎙️ Voice Prompt
+- **🎙️ button** in the input toolbar — visible on all plans
+- Uses the **browser's Web Speech API** (`window.SpeechRecognition` / `webkitSpeechRecognition`) — zero external API cost, no audio data sent to OpenAI
+- **No `lang` property set**: browser inherits the OS/system language automatically
+- **Auto-stop on silence**: 2.5s silence after speech ends triggers `recognition.stop()`; manual click also stops at any time
+- **Inline live transcript**: interim results are written into the textarea in real time; confirmed text is appended to any pre-existing prompt content
+- **Firefox graceful degradation**: button is disabled with tooltip "not supported in this browser" when API is unavailable
+- **Recording state**: mic button pulses red while active
+
 ### ⚙️ Model Selector (Paid)
 - **Dropdown** in the input toolbar — visible only when `body[data-mode="paid"]`
 - Options: `gpt-5-nano` (default) · `gpt-5.4-nano`
@@ -166,4 +175,3 @@ certainthing/
 
 - **⬇️ Scrape + Export PDF/DOCX** — download button post-response, keyword detection, format injection in system prompt
 - **🔍 Deep Research** — dedicated button, two-step `gpt-5-nano` orchestrator + `gpt-5-search-api` retrieval, cost-aware UX
-- **🎙️ Voice Prompt** — speech-to-text input in the chat prompt bar; method TBD (Whisper via OpenAI API vs. Web Speech API vs. other provider)
