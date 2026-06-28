@@ -1802,236 +1802,103 @@ async function openApiKeyModal() {
 
     // ─── Voice Prompt ────────────────────────────────────────────
     (function initVoicePrompt() {
-        const voiceBtn   = document.getElementById('voice-btn');
-        const chatInput  = document.getElementById('chat-input');
+        const voiceBtn  = document.getElementById('voice-btn');
+        const chatInput = document.getElementById('chat-input');
         if (!voiceBtn || !chatInput) return;
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         if (!SpeechRecognition) {
-            voiceBtn.disabled = true;
-            voiceBtn.title    = 'Voice input is not supported in this browser';
+            voiceBtn.disabled      = true;
+            voiceBtn.title         = 'Voice input is not supported in this browser';
             voiceBtn.style.opacity = '0.4';
             voiceBtn.style.cursor  = 'not-allowed';
             return;
         }
 
         const SILENCE_MS = 2500;
-        let recognition   = null;
-        let recording     = false;
-        let silenceTimer  = null;
-        let baseText      = '';   // textarea content when recording started
-        let finalsSoFar   = '';   // accumulated confirmed finals
+        let recognition  = null;
+        let silenceTimer = null;
+        let isRecording  = false;
+        let baseText     = '';
 
-        function startRecording() {
-            recognition = new SpeechRecognition();
-            // lang intentionally NOT set — browser uses OS/system language
-            recognition.continuous      = true;
-            recognition.interimResults  = true;
+        function buildRecognition() {
+            const r = new SpeechRecognition();
+            // lang intentionally NOT set — browser inherits OS/system language
+            r.continuous     = true;
+            r.interimResults = true;
 
-            recognition.onstart = function () {
-                recording = true;
-                voiceBtn.classList.add('recording');
-                voiceBtn.title = 'Recording… (stop: click or pause 2.5 s)';
-                baseText   = chatInput.value;
-                finalsSoFar = '';
-            };
-
-            recognition.onspeechstart = function () {
-                clearTimeout(silenceTimer);
-            };
-
-            recognition.onspeechend = function () {
-                silenceTimer = setTimeout(function () {
-                    if (recognition) recognition.stop();
-                }, SILENCE_MS);
-            };
-
-            recognition.onresult = function (e) {
-                clearTimeout(silenceTimer);
-                let interim = '';
-                for (let i = e.resultIndex; i < e.results.length; i++) {
-                    const t = e.results[i][0].transcript;
-                    if (e.results[i].isFinal) {
-                        finalsSoFar += (finalsSoFar ? ' ' : '') + t.trim();
-                    } else {
-                        interim = t;
-                    }
+            r.onresult = function(event) {
+                // Accumulate ALL results (finals + current interim) for correct
+                // multi-sentence transcripts
+                let allText  = '';
+                let hasFinal = false;
+                for (let i = 0; i < event.results.length; i++) {
+                    allText += event.results[i][0].transcript;
+                    if (event.results[i].isFinal) hasFinal = true;
                 }
-                const combined = finalsSoFar + (interim ? (finalsSoFar ? ' ' : '') + interim : '');
-                const sep = (baseText && combined) ? ' ' : '';
-                chatInput.value = baseText + sep + combined;
+
+                const sep = (baseText && allText.trim()) ? ' ' : '';
+                chatInput.value = baseText + sep + allText.trim();
                 chatInput.style.height = 'auto';
                 chatInput.style.height = chatInput.scrollHeight + 'px';
+
+                // Silence timer: start/reset only on confirmed final result
+                if (hasFinal) {
+                    clearTimeout(silenceTimer);
+                    silenceTimer = setTimeout(function() {
+                        stopRecording();
+                    }, SILENCE_MS);
+                }
             };
 
-            recognition.onerror = function (e) {
-                if (e.error === 'no-speech') return; // silent — just restart silence timer
+            r.onend = function() {
+                if (isRecording) {
+                    // Chrome stops recognition mid-session (internal timeout) even
+                    // with continuous:true — restart transparently
+                    try { recognition.start(); } catch(e) {}
+                } else {
+                    voiceBtn.classList.remove('recording');
+                    voiceBtn.title = 'Voice input';
+                }
+            };
+
+            r.onerror = function(event) {
+                if (event.error === 'no-speech' || event.error === 'aborted') return;
                 stopRecording();
             };
 
-            recognition.onend = function () {
-                stopRecording();
-            };
-
-            recognition.start();
+            return r;
         }
 
         function stopRecording() {
             clearTimeout(silenceTimer);
-            recording = false;
-            voiceBtn.classList.remove('recording');
-            voiceBtn.title = 'Voice input';
-            if (recognition) {
-                try { recognition.abort(); } catch (_) {}
-                recognition = null;
+            isRecording = false;
+            // onend will fire after stop() and clean up the button UI
+            try { recognition.stop(); } catch(e) {
+                voiceBtn.classList.remove('recording');
+                voiceBtn.title = 'Voice input';
             }
         }
 
-        voiceBtn.addEventListener('click', function () {
-            if (recording) {
-                stopRecording();
+        voiceBtn.addEventListener('click', function() {
+            if (!recognition) recognition = buildRecognition();
+
+            if (!isRecording) {
+                baseText    = chatInput.value;
+                isRecording = true;
+                voiceBtn.classList.add('recording');
+                voiceBtn.title = 'Recording\u2026 (stop: click or pause 2.5\u202fs)';
+                try {
+                    recognition.start();
+                } catch(e) {
+                    // Already started — stop and restart
+                    recognition.stop();
+                    setTimeout(function() { recognition.start(); }, 100);
+                }
             } else {
-                startRecording();
+                stopRecording();
             }
         });
     })();
-});
-
-(function() {
-    let libraryData = null;
-
-    // Crea il modale (inserito nel DOM una sola volta)
-    const modal = document.createElement('div');
-    modal.id = 'promptLibraryModal';
-    modal.innerHTML = `
-        <div class="pl-overlay"></div>
-        <div class="pl-container">
-            <div class="pl-header">
-                <h2>⚡ Prompt Library</h2>
-                <input type="text" id="plSearch" placeholder="Search prompts..." autocomplete="off" />
-                <button class="pl-close">&times;</button>
-            </div>
-            <div class="pl-body" id="plBody"></div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-
-    // CSS del modale
-    const style = document.createElement('style');
-    style.textContent = `
-        #promptLibraryModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; }
-        #promptLibraryModal.active { display:flex; align-items:center; justify-content:center; }
-        .pl-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); }
-        .pl-container { position:relative; background:#161b22; border:1px solid #30363d; border-radius:12px; width:90%; max-width:640px; max-height:75vh; display:flex; flex-direction:column; box-shadow:0 16px 48px rgba(0,0,0,0.4); }
-        .pl-header { display:flex; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid #30363d; flex-wrap:wrap; }
-        .pl-header h2 { margin:0; font-size:18px; color:#e6edf3; white-space:nowrap; }
-        #plSearch { flex:1; min-width:160px; padding:8px 12px; background:#0d1117; border:1px solid #30363d; border-radius:6px; color:#c9d1d9; font-size:14px; outline:none; }
-        #plSearch:focus { border-color:#58a6ff; }
-        .pl-close { background:none; border:none; color:#8b949e; font-size:24px; cursor:pointer; padding:0 4px; line-height:1; }
-        .pl-close:hover { color:#e6edf3; }
-        .pl-body { overflow-y:auto; padding:12px 20px 20px; }
-        .pl-category { margin-bottom:16px; }
-        .pl-category-title { font-size:15px; color:#58a6ff; margin-bottom:8px; cursor:pointer; user-select:none; }
-        .pl-category-title:hover { text-decoration:underline; }
-        .pl-prompt-card { background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:12px 14px; margin-bottom:8px; cursor:pointer; transition:border-color 0.15s, background 0.15s; }
-        .pl-prompt-card:hover { border-color:#58a6ff; background:#1c2333; }
-        .pl-prompt-card .pl-title { font-size:14px; font-weight:600; color:#e6edf3; margin-bottom:4px; }
-        .pl-prompt-card .pl-text { font-size:12px; color:#8b949e; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-        .pl-empty { text-align:center; color:#8b949e; padding:32px 0; font-size:14px; }
-    `;
-    document.head.appendChild(style);
-
-    // Funzioni
-    function openLibrary() {
-        if (!libraryData) {
-            fetch('prompts_library.json')
-                .then(r => r.json())
-                .then(data => { libraryData = data; renderCategories(''); })
-                .catch(() => { document.getElementById('plBody').innerHTML = '<div class="pl-empty">Failed to load prompts.</div>'; });
-        } else {
-            renderCategories('');
-        }
-        document.getElementById('plSearch').value = '';
-        modal.classList.add('active');
-        setTimeout(() => document.getElementById('plSearch').focus(), 100);
-    }
-
-    function closeLibrary() {
-        modal.classList.remove('active');
-    }
-
-    function renderCategories(filter) {
-        const body = document.getElementById('plBody');
-        const q = filter.toLowerCase().trim();
-        let html = '';
-        let totalMatches = 0;
-
-        libraryData.categories.forEach(cat => {
-            const prompts = cat.prompts.filter(p =>
-                !q || p.title.toLowerCase().includes(q) || p.text.toLowerCase().includes(q) || cat.name.toLowerCase().includes(q)
-            );
-            if (prompts.length === 0) return;
-            totalMatches += prompts.length;
-
-            html += `<div class="pl-category">`;
-            html += `<div class="pl-category-title">${cat.icon} ${cat.name}</div>`;
-            prompts.forEach(p => {
-                html += `<div class="pl-prompt-card" data-prompt="${escapeAttr(p.text)}">
-                    <div class="pl-title">${highlight(p.title, q)}</div>
-                    <div class="pl-text">${highlight(p.text, q)}</div>
-                </div>`;
-            });
-            html += `</div>`;
-        });
-
-        if (totalMatches === 0) {
-            html = '<div class="pl-empty">No prompts found.</div>';
-        }
-        body.innerHTML = html;
-    }
-
-    function escapeAttr(str) {
-        return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
-
-    function highlight(text, q) {
-        if (!q) return text;
-        const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark style="background:#58a6ff33;color:#e6edf3;border-radius:2px;padding:0 1px;">$1</mark>');
-    }
-
-    function selectPrompt(promptText) {
-        const input = document.getElementById('chat-input'); 
-
-        if (input) {
-            input.value = promptText;
-            input.focus();
-            // Trigger input event per aggiornare eventuali binding
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-        closeLibrary();
-    }
-
-    // Event listeners
-    document.getElementById('promptLibraryBtn').addEventListener('click', openLibrary);
-    modal.querySelector('.pl-overlay').addEventListener('click', closeLibrary);
-    modal.querySelector('.pl-close').addEventListener('click', closeLibrary);
-    document.getElementById('plSearch').addEventListener('input', function() {
-        renderCategories(this.value);
-    });
-    document.getElementById('plBody').addEventListener('click', function(e) {
-        const card = e.target.closest('.pl-prompt-card');
-        if (card) selectPrompt(card.dataset.prompt);
-    });
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && modal.classList.contains('active')) closeLibrary();
-    });
-})();
-
-document.addEventListener('click', function(e) {
-    var popup = document.getElementById('userInfoPopup');
-    if (popup && !e.target.closest('.user-info-wrapper')) {
-        popup.classList.remove('show');
-    }
 });
