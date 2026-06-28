@@ -594,7 +594,7 @@ body, html {
     align-items: center;
 }
 
-#attach-btn:hover, #send-btn:hover, #stop-btn:hover {
+#attach-btn:hover, #send-btn:hover, #stop-btn:hover, #promptLibraryBtn:hover {
     background-color: var(--border-color);
 }
 
@@ -1523,6 +1523,7 @@ footer {
 }
 
 #voice-btn:hover:not(:disabled) {
+    background-color: var(--border-color);
     color: var(--accent-color);
 }
 
