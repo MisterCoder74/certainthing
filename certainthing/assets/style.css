@@ -497,6 +497,23 @@ body, html {
     background-color: var(--border-color);
 }
 
+.assistant-refine-btn {
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--reasoning-text);
+    border-radius: 4px;
+    padding: 0.18rem 0.45rem;
+    font-size: 0.72rem;
+    cursor: pointer;
+    margin-left: 0.35rem;
+}
+
+.assistant-refine-btn:hover {
+    color: var(--accent-color);
+    background-color: var(--border-color);
+    border-color: var(--accent-color);
+}
+
 /* Input Area */
 .input-area {
     padding: 1.5rem;
