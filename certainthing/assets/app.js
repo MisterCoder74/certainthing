@@ -670,11 +670,27 @@ function handlePaste(e) {
             }, 1500);
         });
 
+        const refineBtn = document.createElement('button');
+        refineBtn.type = 'button';
+        refineBtn.className = 'assistant-refine-btn';
+        refineBtn.textContent = '✨ Refine';
+        refineBtn.title = 'Iterate on this output — prefills the prompt so you can describe the change';
+        refineBtn.addEventListener('click', () => {
+            const input = document.getElementById('chat-input');
+            if (!input) return;
+            input.value = 'Refine the previous output: ';
+            input.focus();
+            input.dispatchEvent(new Event('input'));
+            input.selectionStart = input.selectionEnd = input.value.length;
+            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
         const time = document.createElement('span');
         time.className = 'assistant-msg-time';
         time.textContent = formatClock(timestamp);
 
         right.appendChild(copyBtn);
+        right.appendChild(refineBtn);
         right.appendChild(time);
         meta.appendChild(brand);
         meta.appendChild(right);
