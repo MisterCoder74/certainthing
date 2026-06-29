@@ -84,6 +84,75 @@ if (
     exit;
 }
 
+// ── ZIP download handler (whole deploy folder, non-JSON) ────────────────────
+if (
+    isset($_GET['action'], $_SESSION['dm_user_id']) &&
+    $_GET['action'] === 'download_zip'
+) {
+    $userId  = $_SESSION['dm_user_id'];
+    $baseDir = __DIR__ . '/' . $userId;
+    $folder  = dm_sanitizePath($_GET['folder'] ?? '');
+    $full    = $baseDir . ($folder ? '/' . $folder : '');
+
+    if (!$folder || !is_dir($full) || !dm_isInsideBase($full, $baseDir)) {
+        http_response_code(404);
+        echo 'Folder not found';
+        exit;
+    }
+    if (!class_exists('ZipArchive')) {
+        http_response_code(500);
+        echo 'ZIP support (ZipArchive) is not available on this server';
+        exit;
+    }
+
+    $tmpZip = tempnam(sys_get_temp_dir(), 'dm_zip_');
+    $zip    = new ZipArchive();
+    if (!$tmpZip || $zip->open($tmpZip, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+        http_response_code(500);
+        echo 'Failed to create ZIP archive';
+        if ($tmpZip) @unlink($tmpZip);
+        exit;
+    }
+
+    $realFull = realpath($full);
+    $items = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($full, RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST
+    );
+    foreach ($items as $item) {
+        $itemPath = $item->getRealPath();
+        if ($itemPath === false) continue;
+        $relative = ltrim(substr($itemPath, strlen($realFull)), '/\\');
+        $relative = str_replace('\\', '/', $relative);
+        if ($relative === '') continue;
+        if ($item->isDir()) {
+            $zip->addEmptyDir($relative);
+        } else {
+            $zip->addFile($itemPath, $relative);
+        }
+    }
+    $zip->close();
+
+    if (!file_exists($tmpZip) || filesize($tmpZip) === 0) {
+        http_response_code(500);
+        echo 'ZIP generation produced an empty archive';
+        @unlink($tmpZip);
+        exit;
+    }
+
+    $zipName = basename($folder) . '.zip';
+    header('Content-Description: File Transfer');
+    header('Content-Type: application/zip');
+    header('Content-Disposition: attachment; filename="' . $zipName . '"');
+    header('Content-Length: ' . filesize($tmpZip));
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+    readfile($tmpZip);
+    unlink($tmpZip);
+    exit;
+}
+
 // ── AJAX JSON endpoints ─────────────────────────────────────────────────────
 if (isset($_GET['action']) && isset($_SESSION['dm_user_id'])) {
     header('Content-Type: application/json; charset=utf-8');
@@ -720,7 +789,8 @@ a:hover { text-decoration: underline; }
             <?= count($entries) ?> item<?= count($entries) !== 1 ? 's' : '' ?>
         </div>
         <div>
-            <?php if ($currentPath): // only show "New File" inside a deploy folder ?>
+            <?php if ($currentPath): // actions available inside a deploy folder ?>
+                <button class="btn btn-sm" onclick="downloadZip('<?= htmlspecialchars($currentPath, ENT_QUOTES) ?>')">📦 Download ZIP</button>
                 <button class="btn btn-sm" onclick="toggleNewFile()">+ New File</button>
             <?php endif; ?>
         </div>
@@ -790,6 +860,8 @@ a:hover { text-decoration: underline; }
                                 <a class="btn-icon" title="Open in browser"
                                    href="<?= htmlspecialchars($baseUrl . '/' . $userId . '/' . $entry['rel_path']) ?>/"
                                    target="_blank">🔗</a>
+                                <button class="btn-icon" title="Download as ZIP"
+                                    onclick="downloadZip('<?= htmlspecialchars($entry['rel_path'], ENT_QUOTES) ?>')">📦</button>
                                 <button class="btn-icon" title="Rename"
                                     onclick="renameItem('<?= htmlspecialchars($entry['rel_path'], ENT_QUOTES) ?>', '<?= htmlspecialchars($entry['name'], ENT_QUOTES) ?>')">📝</button>
                                 <button class="btn-icon" title="Copy link"
@@ -849,6 +921,13 @@ function copyLink(url) {
         () => showToast('Link copied to clipboard'),
         () => showToast('Failed to copy link', true)
     );
+}
+
+/* ── Download whole deploy folder as ZIP ─────────────────────────────────── */
+function downloadZip(folder) {
+    if (!folder) return;
+    showToast('Preparing ZIP…');
+    location.href = 'deploy_manager.php?action=download_zip&folder=' + encodeURIComponent(folder);
 }
 
 /* ── Delete ──────────────────────────────────────────────────────────────── */
