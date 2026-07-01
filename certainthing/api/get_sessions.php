@@ -25,13 +25,16 @@ foreach ($session_files as $file) {
         : '';
 
     $messages = $data['messages'] ?? [];
-    // Find the first user message as a title
-    $title = 'Untitled';
-    foreach ($messages as $msg) {
-        if ($msg['role'] === 'user' && !empty($msg['content'])) {
-            $title = mb_substr($msg['content'], 0, 60);
-            if (mb_strlen($msg['content']) > 60) $title .= '…';
-            break;
+    // Use custom_title if previously generated, otherwise derive from first user message
+    $title = $data['custom_title'] ?? '';
+    if (empty($title)) {
+        $title = 'Untitled';
+        foreach ($messages as $msg) {
+            if ($msg['role'] === 'user' && !empty($msg['content'])) {
+                $title = mb_substr($msg['content'], 0, 60);
+                if (mb_strlen($msg['content']) > 60) $title .= '…';
+                break;
+            }
         }
     }
 

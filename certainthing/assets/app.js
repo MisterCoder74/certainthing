@@ -279,9 +279,99 @@ function handlePaste(e) {
         chatInput.value = '';
         chatInput.style.height = 'auto';
         
+        hideEmptyState();
         appendMessage('user', message, attachments);
         await sendMessage(message, attachments, urls);
     });
+
+    // =============================================
+    // Empty State
+    // =============================================
+    function showEmptyState() {
+        hideEmptyState();
+        const el = document.createElement('div');
+        el.className = 'empty-state';
+        el.innerHTML = `
+            <div class="empty-state-header">
+                <div class="empty-state-icon">✦</div>
+                <h1 class="empty-state-title">What are we building today?</h1>
+                <p class="empty-state-subtitle">Describe your idea or pick a starter below</p>
+            </div>
+            <div class="empty-state-cards">
+                <div class="starter-card" data-prompt="Build a modern landing page for a SaaS startup with a hero section, feature highlights, pricing table, and a call-to-action button">
+                    <span class="starter-card-icon">🌐</span>
+                    <div class="starter-card-title">Landing page</div>
+                    <div class="starter-card-desc">Hero, features, pricing, CTA</div>
+                </div>
+                <div class="starter-card" data-prompt="Create a product detail page with an image gallery, product description, add-to-cart button, and a customer reviews section">
+                    <span class="starter-card-icon">🛒</span>
+                    <div class="starter-card-title">E-commerce page</div>
+                    <div class="starter-card-desc">Gallery, cart, reviews</div>
+                </div>
+                <div class="starter-card" data-prompt="Build a personal developer portfolio website with a hero, projects showcase grid, skills section, and a contact form">
+                    <span class="starter-card-icon">🎨</span>
+                    <div class="starter-card-title">Portfolio site</div>
+                    <div class="starter-card-desc">Projects, skills, contact form</div>
+                </div>
+                <div class="starter-card" data-prompt="Create an admin dashboard with a collapsible sidebar, KPI metric cards, a data table with search and sort, and a dark theme">
+                    <span class="starter-card-icon">📊</span>
+                    <div class="starter-card-title">Admin dashboard</div>
+                    <div class="starter-card-desc">Sidebar, KPIs, data table</div>
+                </div>
+                <div class="starter-card" data-prompt="Build a browser-based Snake game with smooth animation, score tracking, increasing speed, and a game over screen with restart button">
+                    <span class="starter-card-icon">🎮</span>
+                    <div class="starter-card-title">Browser game</div>
+                    <div class="starter-card-desc">Snake, score, restart</div>
+                </div>
+                <div class="starter-card" data-prompt="Build a multi-step form wizard with a progress bar, field validation, animated transitions between steps, and a final confirmation screen">
+                    <span class="starter-card-icon">📝</span>
+                    <div class="starter-card-title">Multi-step form</div>
+                    <div class="starter-card-desc">Validation, progress, summary</div>
+                </div>
+            </div>
+        `;
+        el.querySelectorAll('.starter-card').forEach(card => {
+            card.addEventListener('click', () => {
+                chatInput.value = card.dataset.prompt;
+                chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+                chatInput.focus();
+                hideEmptyState();
+            });
+        });
+        messagesContainer.appendChild(el);
+    }
+
+    function hideEmptyState() {
+        const existing = messagesContainer.querySelector('.empty-state');
+        if (existing) existing.remove();
+    }
+
+    // =============================================
+    // Auto-Title Session
+    // =============================================
+    async function autoTitleSession() {
+        try {
+            const res = await fetch('api/generate_title.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: currentSessionId })
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.title) {
+                const item = sessionList.querySelector(
+                    `.session-item[data-session-id="${currentSessionId}"] .session-item-title`
+                );
+                if (item) {
+                    item.textContent = data.title;
+                    item.classList.add('title-updated');
+                    setTimeout(() => item.classList.remove('title-updated'), 1500);
+                }
+            }
+        } catch (err) {
+            console.error('Auto-title failed', err);
+        }
+    }
 
     // =============================================
     // New Chat
@@ -306,11 +396,10 @@ function handlePaste(e) {
         localStorage.setItem('certainthing_session_id', currentSessionId);
         messagesContainer.querySelectorAll('.message').forEach(msg => msg.remove());
         reasoningContainer.innerHTML = '';
-		previewIframe.srcdoc = '<html><body><p style="color: #eee; background: rgba(0,0,0,.75);  font-family: sans-serif; padding: 20px;">No HTML found to preview. Try asking the AI to build an HTML page.</p></body></html>';            
         statusBadge.textContent = 'Idle';
         statusBadge.className = 'status-badge idle';
 
-        appendMessage('assistant', "Hello! I'm CertainThing. I can help you build web projects. What are we building today?");
+        showEmptyState();
         hideGenerationUi();
         renderSessions(allSessions);
         showToast('New session started', 'info');
@@ -474,13 +563,13 @@ function handlePaste(e) {
                 refreshPreview();
             } else {
                 messagesContainer.querySelectorAll('.message').forEach(msg => msg.remove());
-                appendMessage('assistant', "Hello! I'm CertainThing. I can help you build web projects. What are we building today?");
+                showEmptyState();
             }
         } catch (err) {
             console.error('Failed to load session', err);
             showToast('Failed to load previous session', 'error');
             messagesContainer.querySelectorAll('.message').forEach(msg => msg.remove());
-            appendMessage('assistant', "Hello! I'm CertainThing. I can help you build web projects. What are we building today?");
+            showEmptyState();
         }
     }
 
@@ -538,13 +627,7 @@ function handlePaste(e) {
                 }
 
                 if (!name) {
-
-                    // Fallback: scan code content for a filename comment
-                    name = extractFilenameFromCode(code.textContent);
-                }
-                if (!name) {
-                    // Last resort: generate a name based on language
-                   
+                    // Fallback: generate a name based on language
                     if (!lang) {
                         // Try to detect language from class
                         const classMatch = code.className.match(/language-(\w+)/);
@@ -670,27 +753,11 @@ function handlePaste(e) {
             }, 1500);
         });
 
-        const refineBtn = document.createElement('button');
-        refineBtn.type = 'button';
-        refineBtn.className = 'assistant-refine-btn';
-        refineBtn.textContent = '✨ Refine';
-        refineBtn.title = 'Iterate on this output — prefills the prompt so you can describe the change';
-        refineBtn.addEventListener('click', () => {
-            const input = document.getElementById('chat-input');
-            if (!input) return;
-            input.value = 'Refine the previous output: ';
-            input.focus();
-            input.dispatchEvent(new Event('input'));
-            input.selectionStart = input.selectionEnd = input.value.length;
-            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
-
         const time = document.createElement('span');
         time.className = 'assistant-msg-time';
         time.textContent = formatClock(timestamp);
 
         right.appendChild(copyBtn);
-        right.appendChild(refineBtn);
         right.appendChild(time);
         meta.appendChild(brand);
         meta.appendChild(right);
@@ -744,20 +811,6 @@ function handlePaste(e) {
         };
         return map[ext] || '';
     }
-        
-	// Fallback: scan first 5 lines of code content for a filename comment
-    // e.g. "// auth.php", "/* styles.css */", "<!-- index.html -->", "# config.yaml"
-    function extractFilenameFromCode(code) {
-        if (!code) return '';
-        const lines = (code + '').split('\n').slice(0, 5);
-        for (const line of lines) {
-            const t = line.trim();
-            // Supports: // file.ext, // file.ext - description, /* file.ext */, <!-- file.ext -->, # file.ext
-            const m = t.match(/^(?:\/\/|\/\*|<!--|#)\s*([\w][\w.\-]*\.[a-zA-Z0-9]{1,8})\b/);
-            if (m && m[1] && !m[1].startsWith('http')) return m[1];
-        }
-        return '';
-    }        
 
     function parseFenceInfo(infoRaw) {
         const info = (infoRaw || '').trim();
@@ -896,10 +949,6 @@ function handlePaste(e) {
             }
 
             const info = parseFenceInfo(match[1]);
-            // Fallback: if no filename in fence info, scan the code content itself
-            if (!info.filename) {
-                info.filename = extractFilenameFromCode(match[2]);
-            }
             html += renderCodeBlock(info.lang, info.filename, match[2]);
             lastIndex = fenceRegex.lastIndex;
         }
@@ -1540,7 +1589,7 @@ async function openApiKeyModal() {
     // =============================================
     async function sendMessage(message, attachments = [], urls = []) {
         applyStatus('Thinking');
-        //reasoningContainer.innerHTML = '';
+        reasoningContainer.innerHTML = '';
         showGenerationUi();
 
         const formData = new FormData();
@@ -1558,11 +1607,6 @@ async function openApiKeyModal() {
             if (langSel && langSel.value) {
                 formData.append('debug_language', langSel.value);
             }
-        }
-
-        const modelSel = document.getElementById('model-selector');
-        if (modelSel) {
-            formData.append('model', modelSel.value);
         }
 
         currentStreamController = new AbortController();
@@ -1711,6 +1755,12 @@ async function openApiKeyModal() {
             }
 
             fetchSessions();
+
+            // Auto-title session after first exchange
+            const userMsgs = messagesContainer.querySelectorAll('.message.user');
+            if (userMsgs.length === 1) {
+                autoTitleSession();
+            }
         } catch (err) {
             if (err.name === 'AbortError') {
                 appendReasoning({
@@ -1795,130 +1845,6 @@ async function openApiKeyModal() {
             if (!debugMode) {
                 const langSel = document.getElementById('debug-lang');
                 if (langSel) langSel.value = '';
-            }
-        });
-    })();
-
-    // ─── Model Selector (paid only) ──────────────────────────
-    (function initModelSelector() {
-        if (document.body.dataset.mode !== 'paid') return;
-        const inputActions = document.querySelector('.input-actions');
-        if (!inputActions) return;
-
-        const sel = document.createElement('select');
-        sel.id = 'model-selector';
-        sel.title = 'Select AI model';
-        sel.innerHTML = `
-            <option value="gpt-5-nano">gpt-5-nano</option>
-            <option value="gpt-5.4-nano">gpt-5.4-nano</option>`;
-
-        const stopBtn = document.getElementById('stop-btn');
-        inputActions.insertBefore(sel, stopBtn);
-    })();
-
-    // ─── Voice Prompt ────────────────────────────────────────────
-    (function initVoicePrompt() {
-        const voiceBtn  = document.getElementById('voice-btn');
-        const chatInput = document.getElementById('chat-input');
-        if (!voiceBtn || !chatInput) return;
-
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-        if (!SpeechRecognition) {
-            voiceBtn.disabled      = true;
-            voiceBtn.title         = 'Voice input is not supported in this browser';
-            voiceBtn.style.opacity = '0.4';
-            voiceBtn.style.cursor  = 'not-allowed';
-            return;
-        }
-
-        const SILENCE_MS = 2500;
-        let recognition  = null;
-        let silenceTimer = null;
-        let isRecording  = false;
-        let baseText     = '';
-
-        function buildRecognition() {
-            const r = new SpeechRecognition();
-            // lang: read from #voice-language; empty string = browser/OS default
-            const langSel = document.getElementById('voice-language');
-            r.lang = langSel ? langSel.value : '';
-            r.continuous     = true;
-            r.interimResults = true;
-
-            r.onresult = function(event) {
-                // Accumulate ALL results (finals + current interim) for correct
-                // multi-sentence transcripts
-                let allText  = '';
-                let hasFinal = false;
-                for (let i = 0; i < event.results.length; i++) {
-                    allText += event.results[i][0].transcript;
-                    if (event.results[i].isFinal) hasFinal = true;
-                }
-
-                const sep = (baseText && allText.trim()) ? ' ' : '';
-                chatInput.value = baseText + sep + allText.trim();
-                chatInput.style.height = 'auto';
-                chatInput.style.height = chatInput.scrollHeight + 'px';
-
-                // Silence timer: start/reset only on confirmed final result
-                if (hasFinal) {
-                    clearTimeout(silenceTimer);
-                    silenceTimer = setTimeout(function() {
-                        stopRecording();
-                    }, SILENCE_MS);
-                }
-            };
-
-            r.onend = function() {
-                if (isRecording) {
-                    // Chrome stops recognition mid-session (internal timeout) even
-                    // with continuous:true — restart transparently
-                    try { recognition.start(); } catch(e) {}
-                } else {
-                    voiceBtn.classList.remove('recording');
-                    voiceBtn.title = 'Voice input';
-                }
-            };
-
-            r.onerror = function(event) {
-                if (event.error === 'no-speech' || event.error === 'aborted') return;
-                stopRecording();
-            };
-
-            return r;
-        }
-
-        function stopRecording() {
-            clearTimeout(silenceTimer);
-            isRecording = false;
-            // onend will fire after stop() and clean up the button UI
-            try { recognition.stop(); } catch(e) {
-                voiceBtn.classList.remove('recording');
-                voiceBtn.title = 'Voice input';
-            }
-        }
-
-        voiceBtn.addEventListener('click', function() {
-            if (!recognition) recognition = buildRecognition();
-
-            if (!isRecording) {
-                baseText    = chatInput.value;
-                isRecording = true;
-                voiceBtn.classList.add('recording');
-                voiceBtn.title = 'Recording\u2026 (stop: click or pause 2.5\u202fs)';
-                // Sync lang to current select value before each start
-                const _langSel = document.getElementById('voice-language');
-                if (_langSel) recognition.lang = _langSel.value;
-                try {
-                    recognition.start();
-                } catch(e) {
-                    // Already started — stop and restart
-                    recognition.stop();
-                    setTimeout(function() { recognition.start(); }, 100);
-                }
-            } else {
-                stopRecording();
             }
         });
     })();
