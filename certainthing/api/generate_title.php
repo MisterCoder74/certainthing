@@ -63,7 +63,7 @@ $apiKey  = get_openai_api_key();
 // Try AI-generated title (fast, cheap: max 20 tokens)
 if (!empty($apiKey)) {
     $payload = [
-        'model'       => 'gpt-5-nano',
+        'model'       => 'gpt-4o-mini',
         'messages'    => [
             [
                 'role'    => 'system',
