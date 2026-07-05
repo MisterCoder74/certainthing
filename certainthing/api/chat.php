@@ -96,6 +96,86 @@ function format_bytes($bytes) {
     return round($bytes / 1048576, 2) . ' MB';
 }
 
+// ─── Progressive disclosure: 2-level design style retrieval ───────────
+// Level 1: index.json (lightweight router) is ALWAYS injected.
+// Level 2: the 1–2 style detail files whose keywords match the user
+//          message are loaded on demand. Fixed cost = index; variable
+//          cost = only the styles relevant to this specific request.
+function build_style_context($message) {
+    $indexFile = STYLES_DIR . '/index.json';
+    if (!is_file($indexFile)) {
+        return '';
+    }
+
+    $indexRaw = file_get_contents($indexFile);
+    $index = json_decode($indexRaw, true);
+    if (!is_array($index) || empty($index['styles']) || !is_array($index['styles'])) {
+        return '';
+    }
+
+    // Level 1 — index always loaded
+    $context = "=== DESIGN STYLE INDEX (Level 1 — always loaded) ===\n" . trim($indexRaw);
+
+    // Keyword matching: score each style by how many of its keywords
+    // appear as substrings in the (lowercased) user message.
+    $msg = mb_strtolower((string) $message);
+    $scores = [];
+    foreach ($index['styles'] as $styleKey => $style) {
+        $score = 0;
+        foreach (($style['keywords'] ?? []) as $kw) {
+            $kw = mb_strtolower(trim((string) $kw));
+            if ($kw !== '' && mb_strpos($msg, $kw) !== false) {
+                $score++;
+            }
+        }
+        if ($score > 0) {
+            $scores[$styleKey] = $score;
+        }
+    }
+
+    if (empty($scores)) {
+        reasoning_step(
+            '&#x1F3A8; Style index loaded &middot; no specific style matched &mdash; index only (fixed cost)',
+            'style_index', 'progressive_disclosure'
+        );
+        return $context;
+    }
+
+    // Rank by score desc, cap at 2 (rule: never load more than 2 files)
+    arsort($scores);
+    $selected = array_slice(array_keys($scores), 0, 2);
+
+    $loaded = [];
+    $missing = [];
+    foreach ($selected as $styleKey) {
+        $file = $index['styles'][$styleKey]['file'] ?? '';
+        // basename() hardens against path traversal in the index file
+        $detailFile = STYLES_DIR . '/' . basename((string) $file);
+        if ($file !== '' && is_file($detailFile)) {
+            $detailRaw = file_get_contents($detailFile);
+            $context .= "\n\n=== DESIGN STYLE DETAIL: {$styleKey} (Level 2 — loaded on demand) ===\n" . trim($detailRaw);
+            $loaded[] = $styleKey;
+        } else {
+            $missing[] = $styleKey;
+        }
+    }
+
+    if (!empty($loaded)) {
+        reasoning_step(
+            '&#x1F3A8; Progressive disclosure &middot; matched: ' . implode(', ', $loaded) . ' &mdash; style detail loaded',
+            'style_match', 'progressive_disclosure'
+        );
+    }
+    if (!empty($missing)) {
+        reasoning_step(
+            '&#x26A0;&#xFE0F; Style matched (' . implode(', ', $missing) . ') but detail file missing on server &mdash; using index only for those',
+            'style_missing', 'progressive_disclosure'
+        );
+    }
+
+    return $context;
+}
+
 send_event('status', 'Thinking');
 
 $user_id = $_SESSION['user_id'];
@@ -242,6 +322,12 @@ if ($debug_mode) {
 } else {
     reasoning_step('&#x1F4DC; Loading system prompt&hellip;', 'prompt_load', 'system_prompt.txt');
     $system_prompt = file_get_contents(PROMPTS_DIR . '/system_prompt.txt');
+
+    // ─── Progressive disclosure: inject design-style index + matched detail(s) ───
+    $style_context = build_style_context($message);
+    if ($style_context !== '') {
+        $system_prompt .= "\n\n" . $style_context;
+    }
 }
 $messages = [
     ['role' => 'developer', 'content' => $system_prompt]
