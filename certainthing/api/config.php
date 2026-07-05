@@ -19,6 +19,7 @@ define('DATA_DIR', __DIR__ . '/../data');
 define('SESSIONS_DIR', DATA_DIR . '/sessions');
 define('USERS_FILE', DATA_DIR . '/users.json');
 define('PROMPTS_DIR', __DIR__ . '/../prompts');
+define('STYLES_DIR', __DIR__ . '/../styles');
 define('OPENAI_KEY_FILE', DATA_DIR . '/openai_api_key.txt');
 
 /**
