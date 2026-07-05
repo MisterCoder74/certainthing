@@ -116,27 +116,37 @@ function build_style_context($message) {
     // Level 1 — index always loaded
     $context = "=== DESIGN STYLE INDEX (Level 1 — always loaded) ===\n" . trim($indexRaw);
 
+    $styleCount = count($index['styles']);
+    reasoning_step(
+        '&#x1F4D6; Reading style index &middot; ' . $styleCount . ' style(s) available: ' . implode(', ', array_keys($index['styles'])),
+        'style_index_read', 'styles/index.json'
+    );
+
     // Keyword matching: score each style by how many of its keywords
     // appear as substrings in the (lowercased) user message.
     $msg = mb_strtolower((string) $message);
     $scores = [];
+    $matchedKeywords = [];
     foreach ($index['styles'] as $styleKey => $style) {
         $score = 0;
+        $hits = [];
         foreach (($style['keywords'] ?? []) as $kw) {
             $kw = mb_strtolower(trim((string) $kw));
             if ($kw !== '' && mb_strpos($msg, $kw) !== false) {
                 $score++;
+                $hits[] = $kw;
             }
         }
         if ($score > 0) {
             $scores[$styleKey] = $score;
+            $matchedKeywords[$styleKey] = $hits;
         }
     }
 
     if (empty($scores)) {
         reasoning_step(
-            '&#x1F3A8; Style index loaded &middot; no specific style matched &mdash; index only (fixed cost)',
-            'style_index', 'progressive_disclosure'
+            '&#x1F3A8; No style keywords matched this prompt &mdash; proceeding with index only (no detail file loaded)',
+            'style_choice', 'progressive_disclosure'
         );
         return $context;
     }
@@ -145,30 +155,41 @@ function build_style_context($message) {
     arsort($scores);
     $selected = array_slice(array_keys($scores), 0, 2);
 
+    reasoning_step(
+        '&#x1F3AF; Style choice &middot; prompt matched: ' . implode(', ', array_map(
+            function ($k) use ($matchedKeywords) {
+                return $k . ' (' . implode('/', $matchedKeywords[$k]) . ')';
+            },
+            $selected
+        )),
+        'style_choice', 'progressive_disclosure'
+    );
+
     $loaded = [];
     $missing = [];
     foreach ($selected as $styleKey) {
         $file = $index['styles'][$styleKey]['file'] ?? '';
         // basename() hardens against path traversal in the index file
-        $detailFile = STYLES_DIR . '/' . basename((string) $file);
+        $safeFile = basename((string) $file);
+        $detailFile = STYLES_DIR . '/' . $safeFile;
         if ($file !== '' && is_file($detailFile)) {
             $detailRaw = file_get_contents($detailFile);
             $context .= "\n\n=== DESIGN STYLE DETAIL: {$styleKey} (Level 2 — loaded on demand) ===\n" . trim($detailRaw);
-            $loaded[] = $styleKey;
+            $loaded[] = $styleKey . ' (' . $safeFile . ')';
         } else {
-            $missing[] = $styleKey;
+            $missing[] = $styleKey . ' (' . $safeFile . ')';
         }
     }
 
     if (!empty($loaded)) {
         reasoning_step(
-            '&#x1F3A8; Progressive disclosure &middot; matched: ' . implode(', ', $loaded) . ' &mdash; style detail loaded',
-            'style_match', 'progressive_disclosure'
+            '&#x1F4C4; Definition file(s) loaded &middot; ' . implode(', ', $loaded),
+            'style_detail_load', 'progressive_disclosure'
         );
     }
     if (!empty($missing)) {
         reasoning_step(
-            '&#x26A0;&#xFE0F; Style matched (' . implode(', ', $missing) . ') but detail file missing on server &mdash; using index only for those',
+            '&#x26A0;&#xFE0F; Style matched but detail file missing on server: ' . implode(', ', $missing) . ' &mdash; using index only for those',
             'style_missing', 'progressive_disclosure'
         );
     }
