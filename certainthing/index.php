@@ -367,6 +367,9 @@ display: none;
                         <option value="fr-FR">FR</option>
                         <option value="de-DE">DE</option>
                         <option value="pt-PT">PT</option>
+                        <option value="ro-RO">RO</option>
+                        <option value="ru-RU">RU</option>
+                        <option value="pl-PL">PL</option>     
                     </select>
                                     <button type="button" id="stop-btn" class="stop-btn" title="Stop generation">⏹</button>
                                     <button type="submit" id="send-btn" title="Send">➤</button>
