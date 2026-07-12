@@ -5,8 +5,11 @@ check_auth();
 header('Content-Type: application/json');
 
 $data = json_decode(file_get_contents('php://input'), true);
-$repo = $data['repo'] ?? ''; // e.g., "username/repo"
-$pat = $data['pat'] ?? '';
+$settings = get_user_settings();
+// repo/pat vengono dal Setup panel (server-side); i valori nel payload restano come fallback
+// di compatibilità se il pannello non è ancora stato configurato.
+$repo = $settings['github_repo'] !== '' ? $settings['github_repo'] : ($data['repo'] ?? ''); // e.g., "username/repo"
+$pat = $settings['github_pat'] !== '' ? $settings['github_pat'] : ($data['pat'] ?? '');
 $files = $data['files'] ?? [];
 $message = $data['message'] ?? 'Deploy from CertainThing';
 
