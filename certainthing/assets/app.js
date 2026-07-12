@@ -105,6 +105,119 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ─── Setup Panel: tabs + GitHub/Model/Voice (server-persisted) ─────────
+    (function initSetupPanel() {
+        const tabs = document.querySelectorAll('.setup-tab');
+        const sections = document.querySelectorAll('.setup-section');
+        if (!tabs.length) return;
+
+        // Model choice is paid-only — drop the tab entirely otherwise
+        if (document.body.dataset.mode !== 'paid') {
+            const modelTab = document.querySelector('.setup-tab[data-tab="model"]');
+            if (modelTab) modelTab.remove();
+        }
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                sections.forEach(s => { s.hidden = (s.dataset.section !== tab.dataset.tab); });
+            });
+        });
+
+        const cancel2 = document.getElementById('api-key-cancel-2');
+        if (cancel2) cancel2.addEventListener('click', closeApiKeyModal);
+
+        const ghRepoInput  = document.getElementById('setup-gh-repo');
+        const ghPatInput   = document.getElementById('setup-gh-pat');
+        const ghStatus     = document.getElementById('setup-gh-status');
+        const ghSaveBtn    = document.getElementById('setup-gh-save');
+        const modelSelect  = document.getElementById('setup-model-select');
+        const modelStatus  = document.getElementById('setup-model-status');
+        const voiceSelect  = document.getElementById('voice-language');
+        const voiceStatus  = document.getElementById('setup-voice-status');
+
+        // Loaded whenever the panel opens (see openApiKeyModal below)
+        window._loadSetupSettings = async function() {
+            try {
+                const res = await fetch('api/save_settings.php', { cache: 'no-store' });
+                const s = await res.json();
+                if (ghRepoInput) ghRepoInput.value = s.github_repo || '';
+                if (ghPatInput) {
+                    ghPatInput.value = '';
+                    ghPatInput.placeholder = s.github_pat_set ? `saved (${s.github_pat_mask}) — leave blank to keep` : 'ghp_xxxxxxxxxxxx';
+                }
+                if (modelSelect) modelSelect.value = s.model || 'gpt-5-nano';
+                if (voiceSelect) voiceSelect.value = s.voice_language || '';
+            } catch (err) {
+                console.error(err);
+                if (ghStatus) ghStatus.textContent = 'Failed to load settings.';
+            }
+        };
+
+        if (ghSaveBtn) {
+            ghSaveBtn.addEventListener('click', async () => {
+                const payload = { github_repo: ghRepoInput.value.trim() };
+                if (ghPatInput.value.trim() !== '') payload.github_pat = ghPatInput.value.trim();
+
+                ghSaveBtn.disabled = true;
+                ghSaveBtn.textContent = 'Saving...';
+                try {
+                    const res = await fetch('api/save_settings.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Failed to save');
+                    ghStatus.textContent = 'Saved.';
+                    ghPatInput.value = '';
+                    ghPatInput.placeholder = data.github_pat_set ? `saved (${data.github_pat_mask}) — leave blank to keep` : 'ghp_xxxxxxxxxxxx';
+                    showToast('GitHub settings saved', 'success');
+                } catch (err) {
+                    ghStatus.textContent = err.message || 'Failed to save GitHub settings.';
+                    showToast('Failed to save GitHub settings', 'error');
+                } finally {
+                    ghSaveBtn.disabled = false;
+                    ghSaveBtn.textContent = 'Save GitHub';
+                }
+            });
+        }
+
+        if (modelSelect) {
+            modelSelect.addEventListener('change', async () => {
+                try {
+                    const res = await fetch('api/save_settings.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ model: modelSelect.value })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Failed to save');
+                    modelSelect.value = data.model;
+                    if (modelStatus) modelStatus.textContent = `Using ${data.model}.`;
+                } catch (err) {
+                    if (modelStatus) modelStatus.textContent = 'Failed to save model choice.';
+                }
+            });
+        }
+
+        if (voiceSelect) {
+            voiceSelect.addEventListener('change', async () => {
+                try {
+                    await fetch('api/save_settings.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ voice_language: voiceSelect.value })
+                    });
+                    if (voiceStatus) voiceStatus.textContent = 'Saved.';
+                } catch (err) {
+                    if (voiceStatus) voiceStatus.textContent = 'Failed to save.';
+                }
+            });
+        }
+    })();
+
     // Close reasoning pane on escape
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
@@ -1233,10 +1346,10 @@ function handlePaste(e) {
     // =============================================
     // GitHub Integration
     // =============================================
-    function openGitHubModal(files) {
+    async function openGitHubModal(files) {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
-        
+
         const modal = document.createElement('div');
         modal.className = 'modal-content';
         modal.innerHTML = `
@@ -1245,12 +1358,8 @@ function handlePaste(e) {
                 This will create a new commit with ${files.length} file(s).
             </p>
             <div class="form-group">
-                <label>Repository (user/repo)</label>
-                <input type="text" id="gh-repo" placeholder="e.g. octocat/hello-world" value="${localStorage.getItem('ct_gh_repo') || ''}">
-            </div>
-            <div class="form-group">
-                <label>Personal Access Token (PAT)</label>
-                <input type="password" id="gh-pat" placeholder="ghp_xxxxxxxxxxxx" value="${localStorage.getItem('ct_gh_pat') || ''}">
+                <label>Repository</label>
+                <div id="gh-repo-display" style="font-size: 0.85rem; color: var(--reasoning-text);">Loading…</div>
             </div>
             <div class="form-group">
                 <label>Commit Message</label>
@@ -1261,28 +1370,36 @@ function handlePaste(e) {
                 <button class="btn-primary" id="gh-push" style="margin-top: 0; width: auto; padding: 0.5rem 1.5rem;">Push Commit</button>
             </div>
         `;
-        
+
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
-        
+
         modal.querySelector('#gh-cancel').onclick = () => overlay.remove();
-        
-        modal.querySelector('#gh-push').onclick = async () => {
-            const repo = modal.querySelector('#gh-repo').value.trim();
-            const pat = modal.querySelector('#gh-pat').value.trim();
-            //const branch = modal.querySelector('#gh-branch').value.trim();
-            const message = modal.querySelector('#gh-message').value.trim();
-            
-            if (!repo || !pat ) {
-                showToast('Please fill all required fields', 'error');
-                return;
+
+        // Repository/PAT non si inseriscono più qui: vivono nel pannello Setup, persistiti server-side.
+        const repoDisplay = modal.querySelector('#gh-repo-display');
+        const pushBtn = modal.querySelector('#gh-push');
+        let repoConfigured = false;
+
+        try {
+            const res = await fetch('api/save_settings.php', { cache: 'no-store' });
+            const s = await res.json();
+            if (s.github_repo && s.github_pat_set) {
+                repoDisplay.textContent = s.github_repo;
+                repoConfigured = true;
+            } else {
+                repoDisplay.innerHTML = 'Not configured — set it in <strong>Setup → GitHub</strong> first.';
+                pushBtn.disabled = true;
             }
+        } catch (err) {
+            repoDisplay.textContent = 'Could not load GitHub settings.';
+            pushBtn.disabled = true;
+        }
 
-            // Save to localStorage for convenience (PAT should be handled carefully but as per ticket we can store for duration or use caution)
-            localStorage.setItem('ct_gh_repo', repo);
-            localStorage.setItem('ct_gh_pat', pat);
+        pushBtn.onclick = async () => {
+            if (!repoConfigured) return;
+            const message = modal.querySelector('#gh-message').value.trim();
 
-            const pushBtn = modal.querySelector('#gh-push');
             pushBtn.disabled = true;
             pushBtn.textContent = 'Pushing...';
 
@@ -1290,7 +1407,7 @@ function handlePaste(e) {
                 const response = await fetch('api/github_push.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ repo, pat, message, files })
+                    body: JSON.stringify({ message, files })
                 });
 
                 const result = await response.json();
@@ -1298,7 +1415,7 @@ function handlePaste(e) {
                     showToast('Successfully pushed to GitHub!', 'success');
                     overlay.remove();
                     // Optional: add a message to the chat
-                    appendMessage('assistant', `Successfully pushed to GitHub repository **${repo}**! [View Commit](${result.view_url})`);
+                    appendMessage('assistant', `Successfully pushed to GitHub repository **${repoDisplay.textContent}**! [View Commit](${result.view_url})`);
                 } else {
                     throw new Error(result.error || 'GitHub push failed');
                 }
@@ -1523,6 +1640,7 @@ async function openApiKeyModal() {
     if (!apiKeyModal) return;
     apiKeyModal.classList.remove('hidden');
     if (apiKeyInput) apiKeyInput.value = '';
+    if (window._loadSetupSettings) window._loadSetupSettings();
 
     setApiKeyStatus('Checking current key...');
 
@@ -1650,10 +1768,8 @@ async function openApiKeyModal() {
             }
         }
 
-        const modelSel = document.getElementById('model-selector');
-        if (modelSel) {
-            formData.append('model', modelSel.value);
-        }
+        // Il modello non viene più letto da un selettore in toolbar: chat.php lo legge
+        // direttamente dalle impostazioni persistite server-side (Setup panel, paid-only).
 
         currentStreamController = new AbortController();
 
@@ -1895,22 +2011,9 @@ async function openApiKeyModal() {
         });
     })();
 
-    // ─── Model Selector (paid only) ──────────────────────────
-    (function initModelSelector() {
-        if (document.body.dataset.mode !== 'paid') return;
-        const inputActions = document.querySelector('.input-actions');
-        if (!inputActions) return;
-
-        const sel = document.createElement('select');
-        sel.id = 'model-selector';
-        sel.title = 'Select AI model';
-        sel.innerHTML = `
-            <option value="gpt-5-nano">gpt-5-nano</option>
-            <option value="gpt-5.4-nano">gpt-5.4-nano</option>`;
-
-        const stopBtn = document.getElementById('stop-btn');
-        inputActions.insertBefore(sel, stopBtn);
-    })();
+    // NOTE: il selettore modello (paid-only) è stato spostato nel pannello Setup,
+    // persistito server-side via api/save_settings.php — non più iniettato in toolbar
+    // per-messaggio. Vedi initSetupPanel() più sotto.
 
     // ─── Voice Prompt ────────────────────────────────────────────
     (function initVoicePrompt() {
