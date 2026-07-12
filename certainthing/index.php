@@ -227,7 +227,7 @@ display: none;
 
                 <!-- ── FINE STATUS DOT ─────────────────────────────────────────────────────── -->
 
-                    <button id="api-key-btn" class="btn-small" type="button" title="Manage OpenAI API key">🔑 API Key</button>
+                    <button id="api-key-btn" class="btn-small" type="button" title="Setup: API key, GitHub, model, voice">⚙ Setup</button>
                     <a href="auth/logout.php" class="logout-btn">Logout</a>
                 </div>
             </div>
@@ -359,18 +359,6 @@ display: none;
                                     <button type="button" id="attach-btn" title="Attach file">📎</button>
                                     <button type="button" id="promptLibraryBtn" title="Prompt Library">⚡</button>
                                     <button type="button" id="voice-btn" title="Voice input">🎙️</button>
-                    <select id="voice-language" title="Speech recognition language">
-                        <option value="">Auto</option>
-                        <option value="it-IT">IT</option>
-                        <option value="en-US">EN</option>
-                        <option value="es-ES">ES</option>
-                        <option value="fr-FR">FR</option>
-                        <option value="de-DE">DE</option>
-                        <option value="pt-PT">PT</option>
-                        <option value="ro-RO">RO</option>
-                        <option value="ru-RU">RU</option>
-                        <option value="pl-PL">PL</option>     
-                    </select>
                                     <button type="button" id="stop-btn" class="stop-btn" title="Stop generation">⏹</button>
                                     <button type="submit" id="send-btn" title="Send">➤</button>
                                 </div>
@@ -402,22 +390,80 @@ display: none;
         <div id="toast-container"></div>
         <div id="api-key-modal" class="modal-overlay api-key-modal hidden" role="dialog" aria-modal="true" aria-labelledby="api-key-modal-title">
             <div class="modal-content">
-                <h3 id="api-key-modal-title">OpenAI API Key</h3>
-                <p class="api-key-help">Store your key securely on the server for chat requests.</p>
-                <div class="form-group">
-                    <label for="openai-api-key-input">API Key</label>
-                    <input type="password" id="openai-api-key-input" placeholder="sk-..." autocomplete="new-password">
+                <h3 id="api-key-modal-title">Setup</h3>
+
+                <div class="setup-tabs">
+                    <button type="button" class="setup-tab active" data-tab="account">API Key</button>
+                    <button type="button" class="setup-tab" data-tab="github">GitHub</button>
+                    <button type="button" class="setup-tab" data-tab="model">Model</button>
+                    <button type="button" class="setup-tab" data-tab="voice">Voice</button>
                 </div>
-                <div class="api-key-status" id="api-key-status"></div>
-                <div id="key-status-info" class="key-status-box"></div>
-                 <div id="key-shared-warning" class="key-warning-box">
-                 ⚠️ NOTE: If you are using the fallback <strong>Shared Key</strong>,
-                 you will need to enter your Personal API Key after evaluation expires.
-                 </div>    
-                    
-                <div class="modal-footer">
-                    <button class="btn-small" type="button" id="api-key-cancel">Cancel</button>
-                    <button class="btn-primary" type="button" id="api-key-save">Save Key</button>
+
+                <div class="setup-section" data-section="account">
+                    <p class="api-key-help">Store your key securely on the server for chat requests.</p>
+                    <div class="form-group">
+                        <label for="openai-api-key-input">API Key</label>
+                        <input type="password" id="openai-api-key-input" placeholder="sk-..." autocomplete="new-password">
+                    </div>
+                    <div class="api-key-status" id="api-key-status"></div>
+                    <div id="key-status-info" class="key-status-box"></div>
+                     <div id="key-shared-warning" class="key-warning-box">
+                     ⚠️ NOTE: If you are using the fallback <strong>Shared Key</strong>,
+                     you will need to enter your Personal API Key after evaluation expires.
+                     </div>
+                    <div class="modal-footer">
+                        <button class="btn-small" type="button" id="api-key-cancel">Cancel</button>
+                        <button class="btn-primary" type="button" id="api-key-save">Save Key</button>
+                    </div>
+                </div>
+
+                <div class="setup-section" data-section="github" hidden>
+                    <p class="api-key-help">Used by "Push to GitHub" — stored server-side, never in the browser.</p>
+                    <div class="form-group">
+                        <label for="setup-gh-repo">Repository (user/repo)</label>
+                        <input type="text" id="setup-gh-repo" placeholder="e.g. octocat/hello-world">
+                    </div>
+                    <div class="form-group">
+                        <label for="setup-gh-pat">Personal Access Token</label>
+                        <input type="password" id="setup-gh-pat" placeholder="ghp_xxxxxxxxxxxx" autocomplete="new-password">
+                    </div>
+                    <div class="api-key-status" id="setup-gh-status"></div>
+                    <div class="modal-footer">
+                        <button class="btn-small" type="button" id="api-key-cancel-2">Cancel</button>
+                        <button class="btn-primary" type="button" id="setup-gh-save">Save GitHub</button>
+                    </div>
+                </div>
+
+                <div class="setup-section" data-section="model" hidden>
+                    <p class="api-key-help">Available on the Paid plan. Trial/free accounts always use gpt-5-nano.</p>
+                    <div class="form-group">
+                        <label for="setup-model-select">AI Model</label>
+                        <select id="setup-model-select">
+                            <option value="gpt-5-nano">gpt-5-nano</option>
+                            <option value="gpt-5.4-nano">gpt-5.4-nano</option>
+                        </select>
+                    </div>
+                    <div class="api-key-status" id="setup-model-status"></div>
+                </div>
+
+                <div class="setup-section" data-section="voice" hidden>
+                    <p class="api-key-help">Language used by voice input (🎙️). Saved automatically.</p>
+                    <div class="form-group">
+                        <label for="voice-language">Speech recognition language</label>
+                        <select id="voice-language">
+                            <option value="">Auto</option>
+                            <option value="it-IT">IT</option>
+                            <option value="en-US">EN</option>
+                            <option value="es-ES">ES</option>
+                            <option value="fr-FR">FR</option>
+                            <option value="de-DE">DE</option>
+                            <option value="pt-PT">PT</option>
+                            <option value="ro-RO">RO</option>
+                            <option value="ru-RU">RU</option>
+                            <option value="pl-PL">PL</option>
+                        </select>
+                    </div>
+                    <div class="api-key-status" id="setup-voice-status"></div>
                 </div>
             </div>
         </div>
