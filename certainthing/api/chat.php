@@ -13,7 +13,9 @@ if (function_exists('apache_setenv')) {
     apache_setenv('no-gzip', '1');
 }
 echo str_repeat(' ', 2048) . "\n\n";
-ob_flush();
+if (ob_get_level() > 0) {
+    ob_flush();
+}
 flush();
 
 check_auth();
@@ -197,6 +199,92 @@ function build_style_context($message) {
     return $context;
 }
 
+// ─── Progressive disclosure: 2-level image catalog retrieval ──────────
+// Level 1: generic placeholders (avatar/team/banner) are ALWAYS injected —
+//          cheap, near-universally useful, no keyword gate needed.
+// Level 2: the themed stock-photo catalog is loaded only when the user's
+//          message matches enough image-description keywords, capped at
+//          the 8 best-scoring entries instead of the full 41-image list.
+function build_image_context($message) {
+    $indexFile = STYLES_DIR . '/images_index.json';
+    if (!is_file($indexFile)) {
+        return '';
+    }
+
+    $indexRaw = file_get_contents($indexFile);
+    $index = json_decode($indexRaw, true);
+    if (!is_array($index)) {
+        return '';
+    }
+
+    $placeholders = $index['placeholders'] ?? [];
+    $catalog = $index['catalog'] ?? [];
+    $usageNote = $index['usage_note'] ?? '';
+    $rules = $index['regole_selezione'] ?? [];
+
+    // Level 1 — generic placeholders always loaded
+    $context = "=== IMAGE CATALOG (Level 1 — placeholders, always loaded) ===\n";
+    foreach ($placeholders as $file => $desc) {
+        $context .= "&#8226; {$file} &mdash; {$desc}\n";
+    }
+    if ($usageNote !== '') {
+        $context .= trim($usageNote) . "\n";
+    }
+    if (!empty($rules)) {
+        $context .= "Regole: " . implode(' ', $rules);
+    }
+
+    reasoning_step(
+        '&#x1F5BC;&#xFE0F; Image placeholders loaded &middot; ' . count($placeholders) . ' generic asset(s) available',
+        'image_index_read', 'styles/images_index.json'
+    );
+
+    if (empty($catalog)) {
+        return $context;
+    }
+
+    // Keyword matching against each catalog entry's precomputed keyword list.
+    $msg = mb_strtolower((string) $message);
+    $scores = [];
+    foreach ($catalog as $file => $entry) {
+        $score = 0;
+        foreach (($entry['keywords'] ?? []) as $kw) {
+            $kw = mb_strtolower(trim((string) $kw));
+            if ($kw !== '' && mb_strpos($msg, $kw) !== false) {
+                $score++;
+            }
+        }
+        if ($score > 0) {
+            $scores[$file] = $score;
+        }
+    }
+
+    if (empty($scores)) {
+        reasoning_step(
+            '&#x1F5BC;&#xFE0F; No themed image keywords matched this prompt &mdash; proceeding with placeholders only',
+            'image_choice', 'progressive_disclosure'
+        );
+        return $context;
+    }
+
+    // Rank by score desc, cap at 8 (rule: never load the full 36-entry catalog)
+    arsort($scores);
+    $selected = array_slice(array_keys($scores), 0, 8);
+
+    $context .= "\n\n=== IMAGE CATALOG (Level 2 — themed matches, loaded on demand) ===\n";
+    foreach ($selected as $file) {
+        $desc = $catalog[$file]['description'] ?? '';
+        $context .= "&#8226; {$file} &mdash; {$desc}\n";
+    }
+
+    reasoning_step(
+        '&#x1F3AF; Themed image(s) loaded &middot; ' . implode(', ', $selected),
+        'image_detail_load', 'progressive_disclosure'
+    );
+
+    return $context;
+}
+
 send_event('status', 'Thinking');
 
 $user_id = $_SESSION['user_id'];
@@ -334,18 +422,46 @@ if (empty($session_data)) {
 // ═══════════════════════════════════════════════════
 //  &#x1F9E0; STEP 5 &mdash; Build context &amp; system prompt
 // ═══════════════════════════════════════════════════
+// Fallback prompts used only if the corresponding prompts/*.txt file is missing or
+// unreadable on this deployment — file_get_contents() returns false in that case, and
+// sending 'content' => false to OpenAI is rejected with an opaque HTTP 400. Better to
+// degrade to a minimal built-in prompt (with a visible reasoning warning) than to break
+// the whole request.
+const DEBUG_PROMPT_FALLBACK = 'You are an empathetic and expert code debugger. Analyze the code the user sends, identify bugs, security/performance issues, and propose a refactoring, while being supportive and constructive.';
+const SYSTEM_PROMPT_FALLBACK = 'You are CertainThing, an AI coding assistant that generates complete, production-ready web code (HTML, CSS, JavaScript, PHP) from the user\'s request.';
+
 if ($debug_mode) {
     $lang_hint = $debug_language ? ' &middot; Language: ' . htmlspecialchars($debug_language) : ' &middot; Language: auto-detect';
     reasoning_step('&#x1F41B; Debug mode activated' . $lang_hint, 'debug_start', 'debugger');
-    $system_prompt = file_get_contents(PROMPTS_DIR . '/debug_prompt.txt');
+    $system_prompt = @file_get_contents(PROMPTS_DIR . '/debug_prompt.txt');
+    if ($system_prompt === false || trim($system_prompt) === '') {
+        reasoning_step(
+            '&#x26A0;&#xFE0F; debug_prompt.txt missing or unreadable on server &mdash; using built-in fallback prompt',
+            'prompt_fallback', 'debug_prompt.txt'
+        );
+        $system_prompt = DEBUG_PROMPT_FALLBACK;
+    }
 } else {
     reasoning_step('&#x1F4DC; Loading system prompt&hellip;', 'prompt_load', 'system_prompt.txt');
-    $system_prompt = file_get_contents(PROMPTS_DIR . '/system_prompt.txt');
+    $system_prompt = @file_get_contents(PROMPTS_DIR . '/system_prompt.txt');
+    if ($system_prompt === false || trim($system_prompt) === '') {
+        reasoning_step(
+            '&#x26A0;&#xFE0F; system_prompt.txt missing or unreadable on server &mdash; using built-in fallback prompt',
+            'prompt_fallback', 'system_prompt.txt'
+        );
+        $system_prompt = SYSTEM_PROMPT_FALLBACK;
+    }
 
     // ─── Progressive disclosure: inject design-style index + matched detail(s) ───
     $style_context = build_style_context($message);
     if ($style_context !== '') {
         $system_prompt .= "\n\n" . $style_context;
+    }
+
+    // ─── Progressive disclosure: inject image catalog (placeholders + matched themed) ───
+    $image_context = build_image_context($message);
+    if ($image_context !== '') {
+        $system_prompt .= "\n\n" . $image_context;
     }
 }
 $messages = [
@@ -599,13 +715,16 @@ if (connection_aborted() || $request_cancelled) {
 }
 
 if ($curl_result === false && $curl_errno !== CURLE_OK) {
-    send_event('error', 'OpenAI streaming error: ' . ($curl_error ?: 'Unknown cURL error'));
+    send_event('error', classify_openai_error(0, $curl_errno, $curl_error, ''));
     send_event('status', 'Error');
     exit;
 }
 
 if ($http_code >= 400) {
-    send_event('error', 'OpenAI request failed with HTTP ' . $http_code);
+    // A non-2xx response never gets framed as SSE by OpenAI (no "\n\n" boundaries), so
+    // any body bytes it sent are still sitting unflushed in $buffer — that's the raw
+    // OpenAI JSON error (or an edge-proxy's HTML/plain-text page for a gateway timeout).
+    send_event('error', classify_openai_error($http_code, 0, '', $buffer));
     send_event('status', 'Error');
     exit;
 }
