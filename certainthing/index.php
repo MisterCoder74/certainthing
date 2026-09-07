@@ -146,7 +146,7 @@ $userInfo['days_left'] = $paidDaysLeft . ' days (subscription)';
 .status-dot.orange { background: #f97316; box-shadow: 0 0 4px #f9731688; }
 .status-dot.red    { background: #ef4444; box-shadow: 0 0 4px #ef444488; }
 
-#attach-btn, #promptLibraryBtn, #stop-btn, #send-btn {
+#attach-btn, #promptLibraryBtn, #scrapeExportBtn, #stop-btn, #send-btn {
 background:none;
 border:none;
 color:#58a6ff;
@@ -161,7 +161,7 @@ margin-right:2px;
             
 @media screen and (max-width: 432px) {
 
-        #attach-btn, #promptLibraryBtn, #stop-btn  {
+        #attach-btn, #promptLibraryBtn, #scrapeExportBtn, #stop-btn  {
 background:none;
 border:none;
 color:#58a6ff;
@@ -200,7 +200,11 @@ display: none;
                 <span class="icon">✦</span> CertainThing
             </div>
             <div class="header-actions">
+                <button id="reasoning-panel-toggle" class="sidebar-toggle-btn" title="Toggle reasoning &amp; preview">
+                    <span class="hamburger-icon">☰</span>
+                </button>
                 <button id="reasoning-toggle-header" class="btn-small" title="Toggle reasoning pane">🧠</button>
+                <a href="agentic_workspace.php" class="btn-small" title="Agentic Workspace: upload a zip and vibecode it">🗂 Agentic Workspace</a>
                 <div class="user-menu">
                 <!-- ── STATUS DOT nell'header: aggiorna la riga user-email ─────────────────── -->
 
@@ -228,6 +232,8 @@ display: none;
                 <!-- ── FINE STATUS DOT ─────────────────────────────────────────────────────── -->
 
                     <button id="api-key-btn" class="btn-small" type="button" title="Setup: API key, GitHub, model, voice">⚙ Setup</button>
+                    <button id="usage-dashboard-btn" class="btn-small" type="button" title="Usage &amp; estimated cost (BYOK)">💰 Usage</button>
+                    <button id="assets-manager-btn" class="btn-small" type="button" title="Persistent image assets: upload, tag, reuse">🖼 Assets</button>
                     <a href="auth/logout.php" class="logout-btn">Logout</a>
                 </div>
             </div>
@@ -358,6 +364,7 @@ display: none;
                                 <div class="input-actions">
                                     <button type="button" id="attach-btn" title="Attach file">📎</button>
                                     <button type="button" id="promptLibraryBtn" title="Prompt Library">⚡</button>
+                                    <button type="button" id="scrapeExportBtn" title="Scrape & Export">🌐</button>
                                     <button type="button" id="voice-btn" title="Voice input">🎙️</button>
                                     <button type="button" id="stop-btn" class="stop-btn" title="Stop generation">⏹</button>
                                     <button type="submit" id="send-btn" title="Send">➤</button>
@@ -375,13 +382,32 @@ display: none;
                             <button id="reasoning-toggle-pane" class="btn-small" title="Close reasoning pane">✕</button> 
                         </div>
                     </div>
-                    <div class="reasoning-container" id="reasoning-container"></div>
-                    <div class="preview-container" id="preview-container">
-                        <div class="preview-toolbar">
-                            <button id="refresh-preview-btn" class="btn-small">Refresh</button>
-                            <span class="preview-url">sandbox://index.html</span>
+                    <div class="widget-group" id="widget-group">
+                        <div class="widget" id="reasoning-widget" data-widget="reasoning">
+                            <div class="widget-header">
+                                <span class="widget-title">Reasoning</span>
+                                <button class="btn-small widget-popout-btn" data-widget="reasoning" title="Open in separate window">⧉</button>
+                            </div>
+                            <div class="reasoning-container" id="reasoning-container"></div>
                         </div>
-                        <iframe id="preview-iframe" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
+                        <div class="widget-placeholder" id="reasoning-widget-placeholder" data-widget="reasoning" hidden>
+                            <span>Reasoning is open in a separate window.</span>
+                            <button class="btn-small widget-recall-btn" data-widget="reasoning">Bring back</button>
+                        </div>
+                        <div class="widget" id="preview-widget" data-widget="preview">
+                            <div class="preview-container" id="preview-container">
+                                <div class="preview-toolbar">
+                                    <button id="refresh-preview-btn" class="btn-small">Refresh</button>
+                                    <span class="preview-url">sandbox://index.html</span>
+                                    <button class="btn-small widget-popout-btn" data-widget="preview" title="Open in separate window">⧉</button>
+                                </div>
+                                <iframe id="preview-iframe" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
+                            </div>
+                        </div>
+                        <div class="widget-placeholder" id="preview-widget-placeholder" data-widget="preview" hidden>
+                            <span>Live Preview is open in a separate window.</span>
+                            <button class="btn-small widget-recall-btn" data-widget="preview">Bring back</button>
+                        </div>
                     </div>
                 </section>
             </main>
@@ -397,6 +423,7 @@ display: none;
                     <button type="button" class="setup-tab" data-tab="github">GitHub</button>
                     <button type="button" class="setup-tab" data-tab="model">Model</button>
                     <button type="button" class="setup-tab" data-tab="voice">Voice</button>
+                    <button type="button" class="setup-tab" data-tab="audit">Audit Log</button>
                 </div>
 
                 <div class="setup-section" data-section="account">
@@ -418,11 +445,7 @@ display: none;
                 </div>
 
                 <div class="setup-section" data-section="github" hidden>
-                    <p class="api-key-help">Used by "Push to GitHub" — stored server-side, never in the browser.</p>
-                    <div class="form-group">
-                        <label for="setup-gh-repo">Repository (user/repo)</label>
-                        <input type="text" id="setup-gh-repo" placeholder="e.g. octocat/hello-world">
-                    </div>
+                    <p class="api-key-help">Used by "Push to GitHub" — stored server-side, never in the browser. The repository is picked each time you push, not here — one token works across any repo it has access to.</p>
                     <div class="form-group">
                         <label for="setup-gh-pat">Personal Access Token</label>
                         <input type="password" id="setup-gh-pat" placeholder="ghp_xxxxxxxxxxxx" autocomplete="new-password">
@@ -464,6 +487,76 @@ display: none;
                         </select>
                     </div>
                     <div class="api-key-status" id="setup-voice-status"></div>
+                </div>
+
+                <div class="setup-section" data-section="audit" hidden>
+                    <p class="api-key-help">A record of state-changing actions on your account: deploys, workspace file saves, prompt library changes, GitHub pushes, and API key/settings updates.</p>
+                    <div class="modal-footer" style="justify-content: flex-start; gap: 0.5rem;">
+                        <button class="btn-small" type="button" id="audit-log-refresh">Refresh</button>
+                    </div>
+                    <div class="api-key-status" id="audit-log-status"></div>
+                    <ul id="audit-log-list" class="audit-log-list"></ul>
+                </div>
+            </div>
+        </div>
+        <div id="usage-dashboard-modal" class="modal-overlay usage-dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="usage-dashboard-title">
+            <div class="modal-content">
+                <h3 id="usage-dashboard-title">Usage &amp; Estimated Cost</h3>
+                <p class="api-key-help" id="usage-dashboard-note">
+                    Estimated OpenAI cost based on tokens used across chat and AI code generation.
+                    Applies to calls billed to your own key (BYOK) — verify actual charges in your OpenAI account.
+                </p>
+                <div class="api-key-status" id="usage-dashboard-status"></div>
+                <div class="usage-summary-grid" id="usage-summary-grid" hidden>
+                    <div class="usage-summary-card">
+                        <span class="usage-summary-label">Estimated cost (BYOK)</span>
+                        <span class="usage-summary-value" id="usage-byok-cost">$0.00</span>
+                    </div>
+                    <div class="usage-summary-card">
+                        <span class="usage-summary-label">Total tokens (all sources)</span>
+                        <span class="usage-summary-value" id="usage-total-tokens">0</span>
+                    </div>
+                    <div class="usage-summary-card">
+                        <span class="usage-summary-label">Total calls</span>
+                        <span class="usage-summary-value" id="usage-total-calls">0</span>
+                    </div>
+                </div>
+                <div id="usage-by-model-wrap" hidden>
+                    <h4 class="usage-section-title">By model</h4>
+                    <table class="usage-table" id="usage-by-model-table">
+                        <thead>
+                            <tr><th>Model</th><th>Calls</th><th>Tokens</th><th>Est. cost</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="usage-recent-wrap" hidden>
+                    <h4 class="usage-section-title">Recent calls</h4>
+                    <ul class="usage-recent-list" id="usage-recent-list"></ul>
+                </div>
+                <div class="modal-footer" style="justify-content: space-between;">
+                    <button class="btn-small" type="button" id="usage-dashboard-refresh">Refresh</button>
+                    <button class="btn-small" type="button" id="usage-dashboard-close">Close</button>
+                </div>
+            </div>
+        </div>
+        <div id="assets-manager-modal" class="modal-overlay assets-manager-modal hidden" role="dialog" aria-modal="true" aria-labelledby="assets-manager-title">
+            <div class="modal-content">
+                <h3 id="assets-manager-title">Image Assets</h3>
+                <p class="api-key-help">
+                    Upload logos, hero shots or other images once and reuse them by name across generations —
+                    select the ones you want, then "Use selected" inserts their reference into your prompt.
+                </p>
+                <div class="assets-upload-row">
+                    <input type="file" id="assets-upload-input" accept="image/png,image/jpeg,image/webp" multiple hidden>
+                    <button class="btn-small" type="button" id="assets-upload-btn">＋ Upload image(s)</button>
+                    <span class="api-key-status" id="assets-upload-status"></span>
+                </div>
+                <div class="api-key-status" id="assets-manager-status">Loading...</div>
+                <div class="assets-grid" id="assets-grid" hidden></div>
+                <div class="modal-footer" style="justify-content: space-between;">
+                    <button class="btn-small" type="button" id="assets-use-selected-btn">Use selected in prompt</button>
+                    <button class="btn-small" type="button" id="assets-manager-close">Close</button>
                 </div>
             </div>
         </div>

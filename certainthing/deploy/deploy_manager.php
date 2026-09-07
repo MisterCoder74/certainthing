@@ -760,6 +760,7 @@ a:hover { text-decoration: underline; }
     <div class="dm-logo"><span class="icon">✦</span> CertainThing – Deploys</div>
     <div class="dm-header-right">
         <a href="../index.php" class="dm-back-link">← Back to CertainThing</a>
+        <a href="agentic_deploy_manager.php" class="dm-back-link">🗂 Agentic Deploys</a>
         <span class="dm-user-email"><?= htmlspecialchars($userEmail) ?></span>
         <a href="deploy_manager.php?logout=1" class="btn btn-sm">Logout</a>
     </div>
