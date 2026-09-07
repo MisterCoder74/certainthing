@@ -1,0 +1,40 @@
+{
+  "stile": "claymorphism",
+  "descrizione": "Elementi 3D morbidi tipo plastilina, ombre doppie (chiara+scura) per effetto rilievo, angoli molto arrotondati",
+  "colori": {
+    "varianti_sfondo": [
+      "#f0ebff",
+      "#fff0f5",
+      "#e8f9f0",
+      "#fff8e7",
+      "#eaf4ff"
+    ],
+    "varianti_accento": [
+      "#8c7ae6",
+      "#ff7eb9",
+      "#3ec9a7",
+      "#ffb84d",
+      "#5aa9ff"
+    ],
+    "superficie": "#ffffff",
+    "testo_primario": "#2d2d3a",
+    "testo_secondario": "#6e6e80",
+    "regola_selezione": "Scegli casualmente o in base al settore (kids/edu->pastello vivace, wellness->verde/lavanda, food->arancio/rosa) UN colore sfondo + UN accento tra le varianti. Usa toni pastello per lo sfondo e uno più saturo per l'accento."
+  },
+  "font": {
+    "titoli": "Baloo 2, sans-serif",
+    "corpo": "Nunito, sans-serif",
+    "google_fonts_import": "https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;600&display=swap"
+  },
+  "css_regole": {
+    "border-radius": "24px",
+    "box-shadow": "8px 8px 16px rgba(0,0,0,0.12), -6px -6px 16px rgba(255,255,255,0.7)",
+    "border": "none"
+  },
+  "esempio_css": ".card-clay {\n  background: var(--sfondo);\n  border-radius: 24px;\n  box-shadow: 8px 8px 16px rgba(0,0,0,0.12), -6px -6px 16px rgba(255,255,255,0.7);\n  padding: 24px;\n}",
+  "note_ux": [
+    "Non usare su sfondi scuri: l'effetto clay perde leggibilità",
+    "Limitare a max 2 livelli di ombra sovrapposti per non appesantire",
+    "Ideale per target consumer/giovane, meno indicato per B2B enterprise"
+  ]
+}

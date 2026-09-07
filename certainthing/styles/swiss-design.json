@@ -1,0 +1,39 @@
+{
+  "stile": "swiss_design",
+  "descrizione": "Griglia rigorosa, tipografia protagonista, molto spazio bianco, colori minimi e funzionali",
+  "colori": {
+    "varianti_sfondo": [
+      "#ffffff",
+      "#fafafa",
+      "#f7f5f2",
+      "#ffffff",
+      "#f4f4f4"
+    ],
+    "varianti_accento": [
+      "#ff0000",
+      "#0057ff",
+      "#111111",
+      "#e8590c",
+      "#1a1a1a"
+    ],
+    "testo_primario": "#111111",
+    "testo_secondario": "#555555",
+    "regola_selezione": "Sfondo quasi sempre bianco/quasi bianco + UN solo colore accento tra le varianti, usato con estrema parsimonia (solo su link, CTA, elementi chiave). Evitare palette multicolore."
+  },
+  "font": {
+    "titoli": "Helvetica Now, Helvetica, Arial, sans-serif",
+    "corpo": "Inter, sans-serif",
+    "google_fonts_import": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+  },
+  "css_regole": {
+    "border-radius": "0px",
+    "box-shadow": "none",
+    "griglia": "12 colonne, gutter 24px, margini generosi (min 64px su desktop)"
+  },
+  "esempio_css": ".section-swiss {\n  background: var(--sfondo);\n  padding: 64px 24px;\n  max-width: 1200px;\n  margin: 0 auto;\n}\n.title-swiss {\n  font-size: clamp(2.5rem, 6vw, 5rem);\n  font-weight: 700;\n  letter-spacing: -0.02em;\n  line-height: 0.95;\n}",
+  "note_ux": [
+    "La tipografia è il vero elemento decorativo: variare peso e dimensione, non i colori",
+    "Allineamento a griglia rigoroso, evitare elementi fluttuanti fuori asse",
+    "Ideale per contenuti editoriali, corporate, portfolio minimal"
+  ]
+}

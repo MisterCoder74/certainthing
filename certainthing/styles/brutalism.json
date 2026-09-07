@@ -1,0 +1,39 @@
+{
+  "stile": "brutalism",
+  "descrizione": "Layout grezzo, tipografia gigante, bordi netti neri, contrasti forti, assenza di ombre morbide",
+  "colori": {
+    "varianti_sfondo": [
+      "#ffffff",
+      "#f5f0e6",
+      "#e8e8e8",
+      "#fff9db",
+      "#f0f0f0"
+    ],
+    "varianti_accento": [
+      "#ff3300",
+      "#0033ff",
+      "#00ff88",
+      "#ffee00",
+      "#ff00aa"
+    ],
+    "testo_primario": "#000000",
+    "bordo": "#000000",
+    "regola_selezione": "Scegli sfondo quasi neutro/chiaro + UN colore accento molto saturo tra le varianti. Il colore accento va usato solo su CTA e dettagli chiave, mai diffuso."
+  },
+  "font": {
+    "titoli": "Archivo Black, sans-serif",
+    "corpo": "Space Mono, monospace",
+    "google_fonts_import": "https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
+  },
+  "css_regole": {
+    "border": "3px solid #000000",
+    "border-radius": "0px",
+    "box-shadow": "6px 6px 0px #000000"
+  },
+  "esempio_css": ".card-brutal {\n  background: var(--sfondo);\n  border: 3px solid #000000;\n  border-radius: 0px;\n  box-shadow: 6px 6px 0px #000000;\n  padding: 24px;\n}",
+  "note_ux": [
+    "Evitare arrotondamenti: rovinano l'estetica brutalista",
+    "Usare tipografia in maiuscolo per titoli/CTA per rinforzare l'impatto",
+    "Indicato per portfolio, agenzie creative, brand che vogliono distinguersi; sconsigliato per fintech/healthcare enterprise"
+  ]
+}

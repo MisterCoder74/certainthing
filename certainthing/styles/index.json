@@ -1,0 +1,35 @@
+{
+  "styles": {
+    "glassmorphism": {
+      "file": "glassmorphism.json",
+      "keywords": ["alto impatto", "moderno", "trasparenza", "fintech app", "dashboard premium"],
+      "usa_quando": "L'utente vuole un look moderno, profondo, con effetti vetro/blur, ideale per SaaS e app fintech/crypto"
+    },
+    "claymorphism": {
+      "file": "claymorphism.json",
+      "keywords": ["alto impatto", "morbido", "3D soft", "app consumer", "onboarding"],
+      "usa_quando": "L'utente vuole un look giocoso, tridimensionale, morbido, ideale per app consumer o onboarding"
+    },
+    "brutalism": {
+      "file": "brutalism.json",
+      "keywords": ["editoriale", "grezzo", "personalità forte", "portfolio", "agenzia creativa"],
+      "usa_quando": "L'utente vuole distinguersi con un look grezzo, tipografico, anti-convenzionale"
+    },
+    "neumorphism": {
+      "file": "neumorphism.json",
+      "keywords": ["soft ui", "minimal 3D", "corporate soft", "dashboard settings"],
+      "usa_quando": "L'utente vuole un'interfaccia soft, tattile, con ombre morbide, ideale per pannelli di controllo"
+    },
+    "swiss_design": {
+      "file": "swiss-design.json",
+      "keywords": ["minimal", "pulito", "corporate", "editoriale", "leggibilità"],
+      "usa_quando": "L'utente vuole un look pulito, ordinato, basato su griglia e tipografia, ideale per contenuti/blog/corporate"
+    }
+  },
+  "regole_selezione": [
+    "Leggi sempre questo indice per primo.",
+    "Identifica 1-2 stili pertinenti in base a keywords o descrizione del progetto.",
+    "Carica SOLO i file JSON degli stili selezionati, non l'intero set.",
+    "Se il prompt è ambiguo, chiedi conferma prima di caricare più di 2 file."
+  ]
+}

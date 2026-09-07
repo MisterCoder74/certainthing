@@ -1,0 +1,39 @@
+{
+  "stile": "neumorphism",
+  "descrizione": "Elementi che sembrano estrusi o incassati nello sfondo, ombre doppie soft, monocromatico, molto tattile",
+  "colori": {
+    "varianti_sfondo_base": [
+      "#e0e5ec",
+      "#eef1f5",
+      "#e8ecf1",
+      "#f0f2f5",
+      "#e3e8ee"
+    ],
+    "varianti_accento": [
+      "#5b7fff",
+      "#00b894",
+      "#a29bfe",
+      "#ff7675",
+      "#0984e3"
+    ],
+    "testo_primario": "#3d4451",
+    "testo_secondario": "#8a94a6",
+    "regola_selezione": "Scegli UN grigio-azzurro chiaro come sfondo base e UN accento tra le varianti da usare solo su CTA/stati attivi. Le ombre vanno derivate dallo sfondo base (una più chiara +10% luminosità, una più scura -10%), non da colori fissi."
+  },
+  "font": {
+    "titoli": "Poppins, sans-serif",
+    "corpo": "Poppins, sans-serif",
+    "google_fonts_import": "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+  },
+  "css_regole": {
+    "border-radius": "20px",
+    "box-shadow_estruso": "8px 8px 16px rgba(163,177,198,0.6), -8px -8px 16px rgba(255,255,255,0.8)",
+    "box-shadow_incassato": "inset 6px 6px 12px rgba(163,177,198,0.6), inset -6px -6px 12px rgba(255,255,255,0.8)"
+  },
+  "esempio_css": ".card-neu {\n  background: var(--sfondo-base);\n  border-radius: 20px;\n  box-shadow: 8px 8px 16px rgba(163,177,198,0.6), -8px -8px 16px rgba(255,255,255,0.8);\n  padding: 24px;\n}",
+  "note_ux": [
+    "Attenzione al contrasto: il neumorphism puro spesso fallisce i test di accessibilità, rinforzare i bordi su elementi interattivi",
+    "Non abusare su testi piccoli: usare solo su card, bottoni, toggle",
+    "Ideale per pannelli di controllo, impostazioni, dashboard soft"
+  ]
+}

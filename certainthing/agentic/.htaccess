@@ -1,0 +1,10 @@
+# Agentic Workspace sandbox storage — never web-accessible directly.
+# All reads/writes go through ../api/agentic_workspace_upload.php and
+# ../api/agentic_serve_test.php, both session-authenticated. PHP's own
+# include()/file_get_contents() calls from those scripts bypass this
+# directive entirely (it only blocks direct HTTP requests), same as
+# data/.htaccess already does for data/*.json.
+Options -Indexes -ExecCGI
+<FilesMatch ".*">
+Require all denied
+</FilesMatch>
