@@ -1,0 +1,466 @@
+{
+  "placeholders": {
+    "placeholder_profile_woman.png": "female profile/avatar",
+    "placeholder_profile_man.png": "male profile/avatar",
+    "placeholder_team.png": "group/team photo",
+    "placeholder_horizontal.png": "landscape image (banners, cards)",
+    "placeholder_vertical.png": "portrait image (sidebars, features)"
+  },
+  "catalog": {
+    "image001.jpg": {
+      "description": "Soft pink gradient background perfect for elegant feminine designs and romantic themes",
+      "keywords": [
+        "soft",
+        "pink",
+        "gradient",
+        "background",
+        "elegant",
+        "feminine",
+        "romantic"
+      ]
+    },
+    "image002.jpg": {
+      "description": "Minimalist robot figure in modern interior ideal for AI technology and innovation concepts",
+      "keywords": [
+        "minimalist",
+        "robot",
+        "figure",
+        "modern",
+        "interior",
+        "technology",
+        "innovation"
+      ]
+    },
+    "image003.jpg": {
+      "description": "Laptop with colorful gradient display perfect for tech startup and digital creativity themes",
+      "keywords": [
+        "laptop",
+        "colorful",
+        "gradient",
+        "display",
+        "tech",
+        "startup",
+        "digital",
+        "creativity"
+      ]
+    },
+    "image004.jpg": {
+      "description": "Soft bokeh lights on blurred background ideal for elegant minimal and dreamy atmospheres",
+      "keywords": [
+        "soft",
+        "bokeh",
+        "lights",
+        "blurred",
+        "background",
+        "elegant",
+        "minimal",
+        "dreamy",
+        "atmospheres"
+      ]
+    },
+    "image005.jpg": {
+      "description": "3D social media app icons perfect for social networking profiles and digital marketing",
+      "keywords": [
+        "social",
+        "media",
+        "icons",
+        "networking",
+        "profiles",
+        "digital",
+        "marketing"
+      ]
+    },
+    "image006.jpg": {
+      "description": "Abstract interconnected network nodes pattern ideal for tech business and data visualization",
+      "keywords": [
+        "abstract",
+        "interconnected",
+        "network",
+        "nodes",
+        "pattern",
+        "tech",
+        "business",
+        "data",
+        "visualization"
+      ]
+    },
+    "image007.jpg": {
+      "description": "Starry night sky through canyon rocks perfect for adventure and natural exploration themes",
+      "keywords": [
+        "starry",
+        "night",
+        "through",
+        "canyon",
+        "rocks",
+        "adventure",
+        "natural",
+        "exploration"
+      ]
+    },
+    "image008.jpg": {
+      "description": "Neon lit mechanical gaming keyboard perfect for esports gaming and cyberpunk aesthetic designs",
+      "keywords": [
+        "neon",
+        "mechanical",
+        "gaming",
+        "keyboard",
+        "esports",
+        "cyberpunk",
+        "aesthetic"
+      ]
+    },
+    "image009.jpg": {
+      "description": "Smooth curved abstract shapes in grayscale ideal for modern minimalist design layouts",
+      "keywords": [
+        "smooth",
+        "curved",
+        "abstract",
+        "shapes",
+        "grayscale",
+        "modern",
+        "minimalist",
+        "layouts"
+      ]
+    },
+    "image010.jpg": {
+      "description": "Flowing layered curves in dark tones perfect for sophisticated abstract design backgrounds",
+      "keywords": [
+        "flowing",
+        "layered",
+        "curves",
+        "dark",
+        "tones",
+        "sophisticated",
+        "abstract",
+        "backgrounds"
+      ]
+    },
+    "image011.jpg": {
+      "description": "Intricate textured spherical abstract surface perfect for innovative tech and science concepts",
+      "keywords": [
+        "intricate",
+        "textured",
+        "spherical",
+        "abstract",
+        "surface",
+        "innovative",
+        "tech",
+        "science"
+      ]
+    },
+    "image012.jpg": {
+      "description": "Abstract 3D cylinders arrangement perfect for tech and modern design concepts",
+      "keywords": [
+        "abstract",
+        "cylinders",
+        "arrangement",
+        "tech",
+        "modern"
+      ]
+    },
+    "image014.jpg": {
+      "description": "Colorful glowing particle explosion ideal for energy dynamics and innovation themes",
+      "keywords": [
+        "colorful",
+        "glowing",
+        "particle",
+        "explosion",
+        "energy",
+        "dynamics",
+        "innovation"
+      ]
+    },
+    "image015.jpg": {
+      "description": "Modern office workspace with iMac perfect for professional productivity web designs",
+      "keywords": [
+        "modern",
+        "office",
+        "workspace",
+        "imac",
+        "professional",
+        "productivity"
+      ]
+    },
+    "image016.jpg": {
+      "description": "Laptop displaying analytics dashboard ideal for business intelligence and data themes",
+      "keywords": [
+        "laptop",
+        "displaying",
+        "analytics",
+        "dashboard",
+        "business",
+        "intelligence",
+        "data"
+      ]
+    },
+    "image017.jpg": {
+      "description": "Blue luminous network nodes perfect for connectivity data visualization and tech",
+      "keywords": [
+        "blue",
+        "luminous",
+        "network",
+        "nodes",
+        "connectivity",
+        "data",
+        "visualization",
+        "tech"
+      ]
+    },
+    "image018.jpg": {
+      "description": "Minimal workspace setup with multiple devices perfect for digital lifestyle themes",
+      "keywords": [
+        "minimal",
+        "workspace",
+        "setup",
+        "multiple",
+        "devices",
+        "digital",
+        "lifestyle"
+      ]
+    },
+    "image019.jpg": {
+      "description": "Neon DJ mixer interface ideal for music production and audio editing websites",
+      "keywords": [
+        "neon",
+        "mixer",
+        "interface",
+        "music",
+        "production",
+        "audio",
+        "editing",
+        "websites"
+      ]
+    },
+    "image020.jpg": {
+      "description": "Colorful HTML code syntax highlighting perfect for web development and programming",
+      "keywords": [
+        "colorful",
+        "html",
+        "code",
+        "syntax",
+        "highlighting",
+        "development",
+        "programming"
+      ]
+    },
+    "image021.jpg": {
+      "description": "Dark teal abstract misty background ideal for mysterious calm meditation themes",
+      "keywords": [
+        "dark",
+        "teal",
+        "abstract",
+        "misty",
+        "background",
+        "mysterious",
+        "calm",
+        "meditation"
+      ]
+    },
+    "image022.jpg": {
+      "description": "Minimalist MacBook workspace with flowers perfect for creative professional blogging",
+      "keywords": [
+        "minimalist",
+        "macbook",
+        "workspace",
+        "flowers",
+        "creative",
+        "professional",
+        "blogging"
+      ]
+    },
+    "image023.jpg": {
+      "description": "Warm wooden floor texture perfect for rustic natural and organic design themes",
+      "keywords": [
+        "warm",
+        "wooden",
+        "floor",
+        "texture",
+        "rustic",
+        "natural",
+        "organic"
+      ]
+    },
+    "image024.jpg": {
+      "description": "Blue gold circuit board close-up perfect for tech hardware and electronics component design",
+      "keywords": [
+        "blue",
+        "gold",
+        "circuit",
+        "board",
+        "close",
+        "tech",
+        "hardware",
+        "electronics",
+        "component"
+      ]
+    },
+    "image025.jpg": {
+      "description": "Modern workspace with monitor smartphone and flowers ideal for productivity lifestyle themes",
+      "keywords": [
+        "modern",
+        "workspace",
+        "monitor",
+        "smartphone",
+        "flowers",
+        "productivity",
+        "lifestyle"
+      ]
+    },
+    "image026.jpg": {
+      "description": "Minimalist white laptop on wooden desk perfect for clean professional workspace design",
+      "keywords": [
+        "minimalist",
+        "white",
+        "laptop",
+        "wooden",
+        "desk",
+        "clean",
+        "professional",
+        "workspace"
+      ]
+    },
+    "image027.jpg": {
+      "description": "Colorful code syntax highlighting perfect for web development and programming themes",
+      "keywords": [
+        "colorful",
+        "code",
+        "syntax",
+        "highlighting",
+        "development",
+        "programming"
+      ]
+    },
+    "image028.jpg": {
+      "description": "Glowing blue fiber optics perfect for technology networks and digital communication themes",
+      "keywords": [
+        "glowing",
+        "blue",
+        "fiber",
+        "optics",
+        "technology",
+        "networks",
+        "digital",
+        "communication"
+      ]
+    },
+    "image029.jpg": {
+      "description": "Woman working on tablet with warm lighting perfect for collaborative lifestyle themes",
+      "keywords": [
+        "woman",
+        "working",
+        "tablet",
+        "warm",
+        "lighting",
+        "collaborative",
+        "lifestyle"
+      ]
+    },
+    "image030.jpg": {
+      "description": "Earth at night from space with city lights ideal for global connectivity themes",
+      "keywords": [
+        "earth",
+        "night",
+        "from",
+        "space",
+        "city",
+        "lights",
+        "global",
+        "connectivity"
+      ]
+    },
+    "image031.jpg": {
+      "description": "MacBook with plant and book on white surface ideal for creative minimal design",
+      "keywords": [
+        "macbook",
+        "plant",
+        "book",
+        "white",
+        "surface",
+        "creative",
+        "minimal"
+      ]
+    },
+    "image032.jpg": {
+      "description": "Smartphone apps with colorful icons perfect for mobile application interface design concepts",
+      "keywords": [
+        "smartphone",
+        "apps",
+        "colorful",
+        "icons",
+        "mobile",
+        "application",
+        "interface"
+      ]
+    },
+    "image033.jpg": {
+      "description": "Hands typing on laptop black and white photo perfect for teamwork themes",
+      "keywords": [
+        "hands",
+        "typing",
+        "laptop",
+        "black",
+        "white",
+        "photo",
+        "teamwork"
+      ]
+    },
+    "image034.jpg": {
+      "description": "3D connected cubes with RGB effect ideal for blockchain cryptocurrency network themes",
+      "keywords": [
+        "connected",
+        "cubes",
+        "effect",
+        "blockchain",
+        "cryptocurrency",
+        "network"
+      ]
+    },
+    "image035.jpg": {
+      "description": "Digital AI brain with circuit board pattern perfect for artificial intelligence machine learning themes",
+      "keywords": [
+        "digital",
+        "brain",
+        "circuit",
+        "board",
+        "pattern",
+        "artificial",
+        "intelligence",
+        "machine",
+        "learning"
+      ]
+    },
+    "image036.jpg": {
+      "description": "Female developer working with code on multiple monitors perfect for tech industry themes",
+      "keywords": [
+        "female",
+        "developer",
+        "working",
+        "code",
+        "multiple",
+        "monitors",
+        "tech",
+        "industry"
+      ]
+    },
+    "image037.jpg": {
+      "description": "Control room operator monitoring multiple displays ideal for surveillance data center themes",
+      "keywords": [
+        "control",
+        "room",
+        "operator",
+        "monitoring",
+        "multiple",
+        "displays",
+        "surveillance",
+        "data",
+        "center"
+      ]
+    }
+  },
+  "usage_note": "Use these in <img src=\"./assets/images/{filename}\"> when the design calls for general images. Properly resize and restyle the images via CSS to avoid overflowing.",
+  "regole_selezione": [
+    "I placeholder generici (vedi 'placeholders') sono sempre disponibili e coprono i casi base: avatar, team, banner orizzontale/verticale.",
+    "Il catalogo tematico (vedi 'catalog') va caricato solo quando il prompt implica davvero un'immagine tematica specifica (background, foto stock, hero image con un soggetto preciso).",
+    "Seleziona al massimo 6-8 immagini pertinenti dal catalogo in base al match di parole chiave con la richiesta, non l'intero set."
+  ]
+}
