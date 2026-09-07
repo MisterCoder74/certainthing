@@ -8,6 +8,8 @@
 ob_start();
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/predeploy_checks.php';
+require_once __DIR__ . '/audit_log.php';
 check_auth();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -44,6 +46,33 @@ if (!is_array($files)) {
 $deploy_dir = __DIR__ . '/../deploy/' . $user_id . '/' . $session_id;
 if (!is_dir($deploy_dir)) {
     mkdir($deploy_dir, 0755, true);
+}
+
+// ── Pre-deploy checks: validate PHP/JS syntax BEFORE writing anything ───────
+// Runs as its own pass so a bad file blocks the whole deploy atomically, rather
+// than leaving a partial write (some files live, one broken) behind.
+$predeploy_errors  = [];
+$predeploy_warnings = [];
+foreach ($files as $file) {
+    $name    = basename(str_replace(['..', '\\'], ['', ''], $file['name'] ?? 'unnamed_file'));
+    $content = $file['content'] ?? '';
+    $check   = predeploy_check_file($name ?: 'unnamed_file', $content);
+    if ($check['status'] === 'error') {
+        $predeploy_errors[] = ['file' => $name, 'message' => $check['message']];
+    } elseif ($check['status'] === 'warning') {
+        $predeploy_warnings[] = ['file' => $name, 'message' => $check['message']];
+    }
+}
+
+if (!empty($predeploy_errors)) {
+    ob_end_clean();
+    http_response_code(422);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'error'            => 'Pre-deploy check failed: one or more files have a syntax error.',
+        'predeploy_errors' => $predeploy_errors,
+    ]);
+    exit;
 }
 
 $written_files     = [];
@@ -147,13 +176,21 @@ $base_path   = rtrim($base_path, '/');
 
 $view_url = $base_url . $base_path . '/deploy/' . $user_id . '/' . $session_id;
 
+audit_log_event('deploy', [
+    'session_id'     => $session_id,
+    'files'          => $written_files,
+    'file_count'     => count($written_files),
+    'images_copied'  => count($copied_images),
+]);
+
 ob_end_clean();
 header('Content-Type: application/json');
 echo json_encode([
-    'success'       => true,
-    'files'         => $written_files,
-    'count'         => count($written_files),
-    'images_copied' => $copied_images,
-    'deploy_path'   => '/deploy/' . $user_id . '/' . $session_id,
-    'view_url'      => $view_url
+    'success'             => true,
+    'files'               => $written_files,
+    'count'               => count($written_files),
+    'images_copied'       => $copied_images,
+    'deploy_path'         => '/deploy/' . $user_id . '/' . $session_id,
+    'view_url'            => $view_url,
+    'predeploy_warnings'  => $predeploy_warnings,
 ]);
