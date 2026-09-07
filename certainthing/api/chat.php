@@ -91,6 +91,323 @@ function extract_generated_filenames($text) {
     return $files;
 }
 
+// ─── Fase 2: extract filename => full content for every fenced code block,
+// in document order (later blocks for the same filename overwrite earlier ones
+// within a single response, matching "full file replacement" semantics). ───
+function extract_generated_files_map($text) {
+    $map = [];
+    if (!is_string($text) || $text === '') {
+        return $map;
+    }
+
+    if (!preg_match_all('/```([^\n`]*)\n([\s\S]*?)```/m', $text, $matches, PREG_SET_ORDER)) {
+        return $map;
+    }
+
+    foreach ($matches as $match) {
+        $info = trim($match[1] ?? '');
+        $content = $match[2] ?? '';
+        if ($info === '') {
+            continue;
+        }
+
+        $language = 'text';
+        $filename = '';
+
+        if (preg_match('/^([^\s]+)\s+\[([^\]]+)\]$/', $info, $parts)) {
+            $language = trim($parts[1]);
+            $filename = trim($parts[2]);
+        } elseif (preg_match('/^([^\s]+)\s+(.+)$/', $info, $parts)) {
+            $language = trim($parts[1]);
+            $candidate = trim($parts[2]);
+            if (preg_match('/[\\\/]|\.[A-Za-z0-9]+$/', $candidate)) {
+                $filename = $candidate;
+            }
+        } else {
+            $language = $info;
+        }
+
+        if ($filename === '' && preg_match('/\[([^\]]+)\]/', $info, $named)) {
+            $filename = trim($named[1]);
+        }
+
+        if ($filename === '') {
+            $filename = 'file.' . preg_replace('/[^a-z0-9]+/i', '', strtolower($language));
+        }
+
+        $map[$filename] = $content;
+    }
+
+    return $map;
+}
+
+// ─── Fase 2: replace fenced code blocks in a HISTORICAL message with a short
+// reference note. Current file content already lives in the "current project
+// file state" context block, so replaying it again inside the bounded
+// interaction window would duplicate tokens for no benefit. ───
+function strip_code_for_history($text) {
+    if (!is_string($text) || $text === '') {
+        return $text;
+    }
+
+    return preg_replace_callback('/```([^\n`]*)\n([\s\S]*?)```/m', function ($m) {
+        $info = trim($m[1] ?? '');
+        $filename = '';
+        if (preg_match('/\[([^\]]+)\]/', $info, $named)) {
+            $filename = trim($named[1]);
+        }
+        return $filename !== ''
+            ? "[code for {$filename} generated here — see current project file state]"
+            : '[code block generated here — see current project file state]';
+    }, $text);
+}
+
+// ─── Fase 2: build filename => latest content by replaying every assistant
+// message chronologically; later versions overwrite earlier ones, so the
+// result is always the current state of every file the model has produced. ───
+function build_current_file_state($messages) {
+    $files = [];
+    foreach ($messages as $msg) {
+        if (($msg['role'] ?? '') !== 'assistant') {
+            continue;
+        }
+        foreach (extract_generated_files_map($msg['content'] ?? '') as $filename => $content) {
+            $files[$filename] = $content;
+        }
+    }
+    return $files;
+}
+
+// ─── Fase 2: rules/decisions ledger storage ───────────────────────────
+const CT_LEDGER_MARKER = '<<<CT_LEDGER>>>';
+const CT_LEDGER_COMPACT_THRESHOLD = 20;
+const CT_HISTORY_WINDOW_INTERACTIONS = 5;
+
+function ledger_file_path($user_id, $session_id) {
+    return LEDGERS_DIR . '/' . $user_id . '_' . $session_id . '.json';
+}
+
+function load_ledger($user_id, $session_id) {
+    $data = safe_read_json(ledger_file_path($user_id, $session_id));
+    return (is_array($data) && isset($data['entries']) && is_array($data['entries'])) ? $data['entries'] : [];
+}
+
+function save_ledger($user_id, $session_id, array $entries) {
+    safe_write_json(ledger_file_path($user_id, $session_id), [
+        'session_id' => $session_id,
+        'user_id' => $user_id,
+        'updated_at' => date('c'),
+        'entries' => array_values($entries)
+    ]);
+}
+
+// Splits the raw model output into [display_text, ledger_entries_or_null].
+// The marker and everything after it are never shown to the user or saved
+// into the visible session history — only parsed into the ledger.
+function extract_ledger_marker($full_response) {
+    $pos = strpos($full_response, CT_LEDGER_MARKER);
+    if ($pos === false) {
+        return [$full_response, null];
+    }
+
+    $display = rtrim(substr($full_response, 0, $pos));
+    $raw = trim(substr($full_response, $pos + strlen(CT_LEDGER_MARKER)));
+    // Model may still wrap the JSON in a stray code fence despite instructions not to.
+    $raw = preg_replace('/^```[a-z]*\n?|```$/i', '', trim($raw));
+
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) {
+        return [$display, null];
+    }
+
+    $entries = [];
+    foreach ($decoded as $item) {
+        $type = strtolower(trim((string) ($item['type'] ?? '')));
+        $text = trim((string) ($item['text'] ?? ''));
+        if ($text === '' || !in_array($type, ['rule', 'decision'], true)) {
+            continue;
+        }
+        $entries[] = ['type' => $type, 'text' => $text, 'timestamp' => date('c')];
+    }
+
+    return [$display, $entries];
+}
+
+// Cheap heuristic gate: only worth a small-model fallback call when the reply
+// itself reads like it settled something (keeps this from firing every turn).
+function ledger_fallback_heuristic($user_message, $assistant_text) {
+    $probe = mb_strtolower($user_message . ' ' . $assistant_text);
+    $signals = [
+        'd\'ora in poi', 'da ora in poi', 'sempre', 'mai più', 'regola', 'confermato',
+        'confermiamo', 'stabilito', 'importante:', 'ricorda che', 'preferisco che',
+        'from now on', 'always', 'never again', 'rule:', 'established', 'confirmed',
+        'decided', 'let\'s go with', 'final decision'
+    ];
+    foreach ($signals as $kw) {
+        if (mb_strpos($probe, $kw) !== false) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Best-effort extraction via a cheap non-streaming call, used only when the
+// model didn't emit a CT_LEDGER marker but the exchange looks decision-like.
+function call_small_model_ledger_extract($openai_key, $user_message, $assistant_text) {
+    $prompt = "Read this exchange from a coding project. If it establishes a lasting rule or a firm decision "
+        . "for the project (not routine code output), reply with a compact JSON array like "
+        . "[{\"type\":\"rule\",\"text\":\"...\"}]. If nothing lasting was established, reply with exactly: []\n\n"
+        . "USER: " . mb_substr($user_message, 0, 800) . "\n\nASSISTANT: " . mb_substr($assistant_text, 0, 1200);
+
+    $ch = curl_init('https://api.openai.com/v1/chat/completions');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+        'model' => 'gpt-5-nano',
+        'messages' => [['role' => 'user', 'content' => $prompt]],
+        'max_completion_tokens' => 300
+    ]));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'Authorization: Bearer ' . $openai_key
+    ]);
+    $resp = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($resp === false || $code >= 400) {
+        return [];
+    }
+
+    $json = json_decode($resp, true);
+    $text = trim((string) ($json['choices'][0]['message']['content'] ?? ''));
+    $text = preg_replace('/^```[a-z]*\n?|```$/i', '', $text);
+    $decoded = json_decode($text, true);
+    if (!is_array($decoded)) {
+        return [];
+    }
+
+    $entries = [];
+    foreach ($decoded as $item) {
+        $type = strtolower(trim((string) ($item['type'] ?? '')));
+        $itemText = trim((string) ($item['text'] ?? ''));
+        if ($itemText === '' || !in_array($type, ['rule', 'decision'], true)) {
+            continue;
+        }
+        $entries[] = ['type' => $type, 'text' => $itemText, 'timestamp' => date('c')];
+    }
+    return $entries;
+}
+
+// When the ledger grows past the threshold, ask a cheap model to merge/dedupe
+// it into a shorter equivalent list instead of letting it grow unbounded.
+function compact_ledger_if_needed($openai_key, array $entries) {
+    if (count($entries) <= CT_LEDGER_COMPACT_THRESHOLD) {
+        return [$entries, false];
+    }
+
+    $numbered = [];
+    foreach ($entries as $i => $e) {
+        $numbered[] = ($i + 1) . '. [' . $e['type'] . '] ' . $e['text'];
+    }
+    $prompt = "Merge and deduplicate this list of project rules/decisions into the shortest equivalent list "
+        . "that loses no distinct rule or decision. Keep chronological order where it matters. Reply with ONLY "
+        . "a compact JSON array like [{\"type\":\"rule\",\"text\":\"...\"}], no commentary.\n\n" . implode("\n", $numbered);
+
+    $ch = curl_init('https://api.openai.com/v1/chat/completions');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+        'model' => 'gpt-5-nano',
+        'messages' => [['role' => 'user', 'content' => $prompt]],
+        'max_completion_tokens' => 1200
+    ]));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'Authorization: Bearer ' . $openai_key
+    ]);
+    $resp = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($resp === false || $code >= 400) {
+        return [$entries, false];
+    }
+
+    $json = json_decode($resp, true);
+    $text = trim((string) ($json['choices'][0]['message']['content'] ?? ''));
+    $text = preg_replace('/^```[a-z]*\n?|```$/i', '', $text);
+    $decoded = json_decode($text, true);
+    if (!is_array($decoded) || empty($decoded)) {
+        return [$entries, false];
+    }
+
+    $compacted = [];
+    foreach ($decoded as $item) {
+        $type = strtolower(trim((string) ($item['type'] ?? '')));
+        $itemText = trim((string) ($item['text'] ?? ''));
+        if ($itemText === '' || !in_array($type, ['rule', 'decision'], true)) {
+            continue;
+        }
+        $compacted[] = ['type' => $type, 'text' => $itemText, 'timestamp' => date('c')];
+    }
+
+    return [!empty($compacted) ? $compacted : $entries, !empty($compacted)];
+}
+
+// ─── Fase 2: bounded context — original prompt + current file state + ledger,
+// appended to the system prompt; plus the last N interactions (code stripped)
+// used as the conversational window instead of the full unbounded history. ───
+function build_bounded_context($session_data) {
+    $messages = $session_data['messages'] ?? [];
+
+    $original_prompt = '';
+    foreach ($messages as $msg) {
+        if (($msg['role'] ?? '') === 'user') {
+            $original_prompt = trim((string) ($msg['content'] ?? ''));
+            break;
+        }
+    }
+
+    $current_files = build_current_file_state($messages);
+
+    $context = '';
+    if ($original_prompt !== '') {
+        $context .= "=== ORIGINAL PROJECT PROMPT ===\n" . $original_prompt . "\n";
+    }
+
+    if (!empty($current_files)) {
+        $context .= "\n=== CURRENT PROJECT FILE STATE (latest version of every generated file) ===\n";
+        foreach ($current_files as $filename => $content) {
+            $context .= "--- {$filename} ---\n" . $content . "\n";
+        }
+    }
+
+    // Bounded window: last N user/assistant pairs, with historical code stripped
+    // (the block above already carries the latest version of every file).
+    $pairCount = 0;
+    $windowed = [];
+    for ($i = count($messages) - 1; $i >= 0 && $pairCount < CT_HISTORY_WINDOW_INTERACTIONS; $i--) {
+        $msg = $messages[$i];
+        $role = $msg['role'] ?? '';
+        $content = $msg['content'] ?? '';
+        if ($role === 'assistant') {
+            $content = strip_code_for_history($content);
+        }
+        array_unshift($windowed, ['role' => $role, 'content' => $content, 'attachments' => $msg['attachments'] ?? null]);
+        if ($role === 'user') {
+            $pairCount++;
+        }
+    }
+
+    // Never window out the very first user message twice — if it's already
+    // inside the windowed slice, drop the duplicate original-prompt block link
+    // is fine since the file-state block already summarizes generated code.
+    return [$context, $windowed];
+}
+
 // ─── Format a byte count into human-readable size ───
 function format_bytes($bytes) {
     if ($bytes < 1024) return $bytes . ' B';
@@ -430,6 +747,7 @@ if (empty($session_data)) {
 const DEBUG_PROMPT_FALLBACK = 'You are an empathetic and expert code debugger. Analyze the code the user sends, identify bugs, security/performance issues, and propose a refactoring, while being supportive and constructive.';
 const SYSTEM_PROMPT_FALLBACK = 'You are CertainThing, an AI coding assistant that generates complete, production-ready web code (HTML, CSS, JavaScript, PHP) from the user\'s request.';
 
+$ledger_entries = [];
 if ($debug_mode) {
     $lang_hint = $debug_language ? ' &middot; Language: ' . htmlspecialchars($debug_language) : ' &middot; Language: auto-detect';
     reasoning_step('&#x1F41B; Debug mode activated' . $lang_hint, 'debug_start', 'debugger');
@@ -441,6 +759,8 @@ if ($debug_mode) {
         );
         $system_prompt = DEBUG_PROMPT_FALLBACK;
     }
+    // Debug mode analyzes pasted code directly — bounded history/ledger context doesn't apply.
+    $history_window = $session_data['messages'];
 } else {
     reasoning_step('&#x1F4DC; Loading system prompt&hellip;', 'prompt_load', 'system_prompt.txt');
     $system_prompt = @file_get_contents(PROMPTS_DIR . '/system_prompt.txt');
@@ -463,12 +783,37 @@ if ($debug_mode) {
     if ($image_context !== '') {
         $system_prompt .= "\n\n" . $image_context;
     }
+
+    // ─── Fase 2: bounded history — original prompt + current file state + rules/decisions
+    // ledger appended to the system prompt; only the last 5 interactions (code stripped)
+    // are replayed as conversational turns, instead of the full unbounded session. ───
+    $ledger_entries = load_ledger($user_id, $session_id);
+    list($bounded_context, $history_window) = build_bounded_context($session_data);
+
+    if (!empty($ledger_entries)) {
+        $bounded_context .= "\n=== RULES & DECISIONS LEDGER (chronological) ===\n";
+        foreach ($ledger_entries as $entry) {
+            $bounded_context .= '- [' . $entry['type'] . '] ' . $entry['text'] . "\n";
+        }
+    }
+
+    if ($bounded_context !== '') {
+        $system_prompt .= "\n\n" . $bounded_context;
+    }
+
+    $totalHistoryMsgs = count($session_data['messages']);
+    reasoning_step(
+        '&#x1F5C2;&#xFE0F; Bounded context built &middot; ' . count(build_current_file_state($session_data['messages'])) . ' current file(s) &middot; '
+            . count($ledger_entries) . ' ledger entr' . (count($ledger_entries) === 1 ? 'y' : 'ies') . ' &middot; '
+            . 'last ' . count($history_window) . ' of ' . $totalHistoryMsgs . ' message(s) replayed',
+        'bounded_history', 'context_optimization'
+    );
 }
 $messages = [
     ['role' => 'developer', 'content' => $system_prompt]
 ];
 
-foreach ($session_data['messages'] as $msg) {
+foreach ($history_window as $msg) {
     $role = $msg['role'] ?? '';
     $content = $msg['content'] ?? '';
 
@@ -624,7 +969,16 @@ $json_buffer = '';
 $request_cancelled = false;
 $stream_start_time = microtime(true);
 
-curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use (&$full_response, &$buffer, &$json_buffer, &$request_cancelled, $model) {
+// Fase 2: streaming holdback so the CT_LEDGER marker (and its JSON tail) never
+// reaches the live user stream, even split across multiple SSE chunks. We always
+// withhold the last (marker length - 1) characters until we're sure they aren't
+// the start of the marker; once the marker is seen, everything after it is
+// captured into $full_response as usual but never flushed via send_event.
+$ledger_marker_seen = false;
+$stream_hold = '';
+$markerLen = strlen(CT_LEDGER_MARKER);
+
+curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use (&$full_response, &$buffer, &$json_buffer, &$request_cancelled, &$ledger_marker_seen, &$stream_hold, $markerLen, $model) {
     if (connection_aborted()) {
         $request_cancelled = true;
         return 0;
@@ -676,6 +1030,9 @@ curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use (&$full_respon
                 'timestamp' => date('c'),
                 'model' => $model
             ]);
+            if (is_array($json['usage'])) {
+                log_openai_usage('chat', $model, $json['usage']);
+            }
         }
 
         if (isset($json['choices'][0]['delta']['reasoning_content'])) {
@@ -695,7 +1052,29 @@ curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use (&$full_respon
         if (isset($json['choices'][0]['delta']['content'])) {
             $content = (string) $json['choices'][0]['delta']['content'];
             $full_response .= $content;
-            send_event('content', ['text' => $content]);
+
+            if ($ledger_marker_seen) {
+                // Already inside the ledger tail — captured above into $full_response,
+                // never shown to the user.
+            } else {
+                $combined = $stream_hold . $content;
+                $markerPos = strpos($combined, CT_LEDGER_MARKER);
+                if ($markerPos !== false) {
+                    $visible = substr($combined, 0, $markerPos);
+                    if ($visible !== '') {
+                        send_event('content', ['text' => $visible]);
+                    }
+                    $ledger_marker_seen = true;
+                    $stream_hold = '';
+                } else {
+                    $keepLen = min(strlen($combined), $markerLen - 1);
+                    $safeLen = strlen($combined) - $keepLen;
+                    if ($safeLen > 0) {
+                        send_event('content', ['text' => substr($combined, 0, $safeLen)]);
+                    }
+                    $stream_hold = substr($combined, $safeLen);
+                }
+            }
         }
     }
 
@@ -707,6 +1086,12 @@ $curl_errno = curl_errno($ch);
 $curl_error = curl_error($ch);
 $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
+
+// Stream ended without ever completing the marker match — whatever was held back
+// was genuine trailing content, not a ledger marker, so flush it now.
+if (!$ledger_marker_seen && $stream_hold !== '') {
+    send_event('content', ['text' => $stream_hold]);
+}
 
 $stream_elapsed = round(microtime(true) - $stream_start_time, 2);
 
@@ -736,11 +1121,48 @@ if (trim($full_response) === '') {
 }
 
 // ═══════════════════════════════════════════════════
+//  &#x1F5C2;&#xFE0F; STEP 6.5 &mdash; Rules/decisions ledger update
+// ═══════════════════════════════════════════════════
+// Split off the CT_LEDGER marker (never shown to the user, see streaming holdback
+// above); $display_response is what gets saved to session history and analyzed below.
+list($display_response, $marker_entries) = extract_ledger_marker($full_response);
+if ($marker_entries !== null && !empty($marker_entries)) {
+    reasoning_step(
+        '&#x1F4D3; Ledger marker &middot; ' . count($marker_entries) . ' new entr' . (count($marker_entries) === 1 ? 'y' : 'ies') . ' captured',
+        'ledger_marker', 'context_optimization'
+    );
+} elseif (!$debug_mode && ledger_fallback_heuristic($message, $display_response)) {
+    reasoning_step(
+        '&#x1F50D; No explicit marker, exchange reads decision-like &mdash; checking with a small model&hellip;',
+        'ledger_fallback_check', 'context_optimization'
+    );
+    $marker_entries = call_small_model_ledger_extract($openai_key, $message, $display_response);
+    if (!empty($marker_entries)) {
+        reasoning_step(
+            '&#x1F4D3; Fallback extraction &middot; ' . count($marker_entries) . ' entr' . (count($marker_entries) === 1 ? 'y' : 'ies') . ' captured',
+            'ledger_fallback_hit', 'context_optimization'
+        );
+    }
+}
+
+if (!$debug_mode && !empty($marker_entries)) {
+    $ledger_all = array_merge(load_ledger($user_id, $session_id), $marker_entries);
+    list($ledger_all, $was_compacted) = compact_ledger_if_needed($openai_key, $ledger_all);
+    if ($was_compacted) {
+        reasoning_step(
+            '&#x1F5C3;&#xFE0F; Ledger compacted &middot; now ' . count($ledger_all) . ' entries',
+            'ledger_compact', 'context_optimization'
+        );
+    }
+    save_ledger($user_id, $session_id, $ledger_all);
+}
+
+// ═══════════════════════════════════════════════════
 //  &#x1F4CA; STEP 7 &mdash; Analyze response
 // ═══════════════════════════════════════════════════
-$responseWords = str_word_count($full_response);
-$responseChars = mb_strlen($full_response);
-$responseLines = substr_count($full_response, "\n") + 1;
+$responseWords = str_word_count($display_response);
+$responseChars = mb_strlen($display_response);
+$responseLines = substr_count($display_response, "\n") + 1;
 
 reasoning_step(
     '&#x2705; Response complete in ' . $stream_elapsed . 's &mdash; ' . number_format($responseWords) . ' words &middot; ' . number_format($responseChars) . ' chars &middot; ' . number_format($responseLines) . ' lines',
@@ -750,7 +1172,7 @@ reasoning_step(
 // ═══════════════════════════════════════════════════
 //  &#x1F4C1; STEP 8 &mdash; Detect generated files
 // ═══════════════════════════════════════════════════
-$generatedFiles = extract_generated_filenames($full_response);
+$generatedFiles = extract_generated_filenames($display_response);
 if (!empty($generatedFiles)) {
     reasoning_step(
         '&#x1F50E; Detected ' . count($generatedFiles) . ' generated file(s) in response',
@@ -781,7 +1203,7 @@ $session_data['messages'][] = [
 ];
 $session_data['messages'][] = [
     'role' => 'assistant',
-    'content' => $full_response,
+    'content' => $display_response,
     'timestamp' => date('c')
 ];
 $session_data['updated_at'] = date('c');
