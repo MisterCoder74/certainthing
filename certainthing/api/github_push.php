@@ -1,20 +1,27 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/audit_log.php';
 check_auth();
 
 header('Content-Type: application/json');
 
 $data = json_decode(file_get_contents('php://input'), true);
 $settings = get_user_settings();
-// repo/pat vengono dal Setup panel (server-side); i valori nel payload restano come fallback
-// di compatibilità se il pannello non è ancora stato configurato.
-$repo = $settings['github_repo'] !== '' ? $settings['github_repo'] : ($data['repo'] ?? ''); // e.g., "username/repo"
-$pat = $settings['github_pat'] !== '' ? $settings['github_pat'] : ($data['pat'] ?? '');
+// Il PAT vive nel pannello Setup (server-side), unico per l'utente qualunque sia il repo.
+// Il repo è per-push: arriva dal payload (l'utente lo digita nel modal di push), con
+// fallback all'ultimo repo usato se il client non lo manda per qualche motivo.
+$repo = trim((string) ($data['repo'] ?? ''));
+if ($repo === '') $repo = $settings['github_repo']; // e.g., "username/repo"
+$pat = $settings['github_pat'];
 $files = $data['files'] ?? [];
 $message = $data['message'] ?? 'Deploy from CertainThing';
 
-if (empty($repo) || empty($pat) || empty($files)) {
-    echo json_encode(['error' => 'Missing required fields (repo, pat, or files)']);
+if (empty($pat)) {
+    echo json_encode(['error' => 'GitHub token not configured — set it in Setup → GitHub first.']);
+    exit;
+}
+if (empty($repo) || empty($files)) {
+    echo json_encode(['error' => 'Missing required fields (repo or files)']);
     exit;
 }
 
@@ -106,6 +113,8 @@ $res = github_api("repos/$repo/git/refs/heads/$default_branch", $pat, 'PATCH', [
 ]);
 
 if ($res['status'] === 200) {
+    save_user_settings(['github_repo' => $repo]); // remember as default pre-fill for next push
+    audit_log_event('github_push', ['repo' => $repo, 'commit_sha' => $new_commit_sha, 'file_count' => count($files)]);
     echo json_encode([
         'success' => true, 
         'commit_sha' => $new_commit_sha, 

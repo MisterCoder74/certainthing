@@ -39,10 +39,15 @@ if (isset($_SESSION['user_id'])) {
         <p class="auth-switch">Don't have an account? <a href="register.php">Register</a></p>
             <p class="auth-switch"><a href="doc_en.html" target="_blank">Read Documentation</a></p>
     </div>
+
     
     <footer>
         <p>&copy; <?php echo date('Y'); ?> <span class="icon">✦</span> CertainThing - by Vivacity Design AI Division</p>
         <p><a href="tos.html" target="_blank" style="text-decoration: none; color: 	#808080;">Terms of Services </a> - <a href="privacy.html" target="_blank" style="text-decoration: none; color: 	#808080"> Privacy Policy</a></p>     
+        <p>
+        <a href="https://favors.dev/b/certainthing" target="_blank" rel="noopener">
+          <img src="https://favors.dev/api/badge/certainthing" alt="Launched with Favors.dev" width="232" height="44" />
+        </a></p>
     </footer>
         
 <!-- ============================================

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/audit_log.php';
 check_auth();
 
 header('Content-Type: application/json');
@@ -93,6 +94,7 @@ if ($apiKey === '') {
     if ($file && file_exists($file)) {
         unlink($file);
     }
+    audit_log_event('api_key_removed');
     echo json_encode([
         'success'    => true,
         'configured' => false,
@@ -109,6 +111,7 @@ if (!save_openai_api_key($apiKey)) {
     exit;
 }
 
+audit_log_event('api_key_updated', ['masked_key' => mask_api_key_value($apiKey)]);
 echo json_encode([
     'success'    => true,
     'configured' => true,

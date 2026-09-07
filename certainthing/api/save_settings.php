@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/audit_log.php';
 check_auth();
 
 header('Content-Type: application/json');
@@ -77,6 +78,7 @@ if (!save_user_settings($partial)) {
     exit;
 }
 
+audit_log_event('settings_updated', ['fields' => array_keys($partial)]);
 echo json_encode(array_merge(
     ['success' => true],
     _settings_public_payload(get_user_settings(), $isPaid)

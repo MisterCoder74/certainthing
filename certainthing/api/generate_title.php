@@ -95,6 +95,9 @@ if (!empty($apiKey)) {
 
     if ($httpCode === 200 && $response) {
         $result    = json_decode($response, true);
+        if (isset($result['usage']) && is_array($result['usage'])) {
+            log_openai_usage('title', 'gpt-4o-mini', $result['usage']);
+        }
         $candidate = trim($result['choices'][0]['message']['content'] ?? '');
         $candidate = trim($candidate, '"\'');
         // Accept only sane lengths

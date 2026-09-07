@@ -1,0 +1,42 @@
+{
+  "stile": "glassmorphism",
+  "descrizione": "Superfici semi-trasparenti con effetto vetro smerigliato, bordi sottili luminosi, ombre morbide diffuse",
+  "colori": {
+    "varianti_sfondo_gradiente": [
+      ["#0f0c29", "#302b63", "#24243e"],
+      ["#1a1a2e", "#16213e", "#0f3460"],
+      ["#0d1b2a", "#1b263b", "#415a77"],
+      ["#2b0a3d", "#4a0e6b", "#7b2cbf"],
+      ["#001219", "#005f73", "#0a9396"]
+    ],
+    "varianti_accento": [
+      "#7f5af0",
+      "#4cc9f0",
+      "#f72585",
+      "#43e97b",
+      "#ffb703"
+    ],
+    "superficie": "rgba(255, 255, 255, 0.08)",
+    "bordo": "rgba(255, 255, 255, 0.18)",
+    "testo_primario": "#ffffff",
+    "testo_secondario": "rgba(255, 255, 255, 0.7)",
+    "regola_selezione": "Scegli casualmente o in base al settore (fintech->blu/viola scuro, creativo->rosa/arancio, tech->ciano) UNA coppia gradiente + UN accento tra le varianti disponibili. Deriva accento_hover schiarendo l'accento scelto del 15%."
+  },
+  "font": {
+    "titoli": "Space Grotesk, sans-serif",
+    "corpo": "Inter, sans-serif",
+    "google_fonts_import": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&display=swap"
+  },
+  "css_regole": {
+    "backdrop-filter": "blur(16px) saturate(180%)",
+    "border-radius": "16px",
+    "border": "1px solid var(--bordo)",
+    "box-shadow": "0 8px 32px rgba(0, 0, 0, 0.25)"
+  },
+  "esempio_css": ".card-glass {\n  background: rgba(255, 255, 255, 0.08);\n  backdrop-filter: blur(16px) saturate(180%);\n  -webkit-backdrop-filter: blur(16px) saturate(180%);\n  border: 1px solid rgba(255, 255, 255, 0.18);\n  border-radius: 16px;\n  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);\n  padding: 24px;\n}",
+  "note_ux": [
+    "Evitare troppi livelli sovrapposti di trasparenza: max 2 layer",
+    "Garantire contrasto testo/sfondo minimo 4.5:1 per accessibilità",
+    "Sfondo dietro le card deve avere gradiente o immagine, altrimenti l'effetto vetro è invisibile"
+  ]
+}

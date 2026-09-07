@@ -52,7 +52,7 @@ else {
     // or just try to read it if it's not a binary-looking type
     $allowed_text_types = [
         'text/plain', 'text/html', 'text/css', 'application/javascript', 
-        'application/x-php', 'text/x-php', 'application/json', 'text/markdown'
+        'application/x-php', 'text/x-php', 'application/json', 'text/markdown', 'application/pdf'
     ];
     
     // Also check extension for files that might not have a proper MIME type from the browser
